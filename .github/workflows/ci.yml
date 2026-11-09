@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-telegram:
-    runs-on: [ubuntu-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
@@ -22,7 +22,7 @@ jobs:
         run: uv run python -m pytest tests/ -v
 
   test-minecraft:
-    runs-on: [ubuntu-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
@@ -58,7 +58,7 @@ jobs:
         run: uv run python -c "import main; print('Filesystem MCP OK')"
 
   test-system-import:
-    runs-on: [ubuntu-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
