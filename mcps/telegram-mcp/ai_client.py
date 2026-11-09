@@ -106,8 +106,10 @@ class AIClient:
         data = resp.json()
         return data.get("data", [])
 
-    async def wait_for_completion(self, session_id, timeout=None, poll_interval=2, prev_count=0):
+    async def wait_for_completion(self, session_id, timeout=None, poll_interval=2, prev_ids=None):
         """Wait for the session to finish processing. Returns the assistant response text."""
+        if prev_ids is None:
+            prev_ids = set()
         if timeout is None:
             timeout = self.timeout
         # 0 means no timeout
@@ -123,22 +125,18 @@ class AIClient:
             except Exception:
                 continue
 
-            # Messages are in reverse chronological order (newest first)
-            # Reverse to chronological order (oldest first)
-            messages_chrono = list(reversed(messages))
-            
-            # Only consider NEW messages (after prev_count)
-            # Since we had prev_count messages before, new ones are at the end
-            new_messages = messages_chrono[prev_count:] if len(messages_chrono) > prev_count else messages_chrono
+            # Messages come in reverse chronological order (newest first)
+            # Find NEW messages (not in prev_ids)
+            new_messages = [m for m in messages if m.get("id") not in prev_ids]
 
             # Check for idle/completion message in new messages
             for msg in new_messages:
                 if msg.get("type") == "idle":
                     outcome = msg.get("outcome", "")
                     if outcome == "succeeded":
-                        # Find the last NEW assistant message with text
+                        # Find the first NEW assistant message with text (newest first)
                         found_text = None
-                        for m in reversed(new_messages):
+                        for m in new_messages:
                             if m.get("type") == "assistant":
                                 content = m.get("content", [])
                                 texts = [c.get("text", "") for c in content if c.get("type") == "text"]
@@ -156,7 +154,7 @@ class AIClient:
                         return "Generation was interrupted."
 
             # Also check for assistant message with finish != None in new messages
-            for m in reversed(new_messages):
+            for m in new_messages:
                 if m.get("type") == "assistant" and m.get("finish"):
                     finish = m.get("finish")
                     if finish == "error":
@@ -184,9 +182,9 @@ class AIClient:
         # Messages come in reverse chronological order (newest first), so reverse them
         try:
             prev_msgs = await self.get_messages(session_id)
-            prev_count = len(prev_msgs)
+            prev_ids = {m.get("id") for m in prev_msgs}
         except Exception:
-            prev_count = 0
+            prev_ids = set()
         from config import AI_FALLBACK_MODELS
 
         # Try sending with current model, fallback on token/usage limit
@@ -194,7 +192,7 @@ class AIClient:
         for attempt in range(max_retries):
             try:
                 await self.send_prompt(session_id, text)
-                result = await self.wait_for_completion(session_id, timeout=timeout, prev_count=prev_count)
+                result = await self.wait_for_completion(session_id, timeout=timeout, prev_ids=prev_ids)
 
                 # Check if result indicates a token/usage limit error
                 if result and ("limit" in result.lower() or "token" in result.lower() or "429" in result or "free usage" in result.lower()):
@@ -210,10 +208,10 @@ class AIClient:
                         next_model = AI_FALLBACK_MODELS[next_model_idx]
                         try:
                             await self.switch_model(session_id, model_id=next_model)
-                            # Reset prev_count after model switch
+                            # Reset prev_ids after model switch
                             try:
                                 prev_msgs = await self.get_messages(session_id)
-                                prev_count = len(prev_msgs)
+                                prev_ids = {m.get("id") for m in prev_msgs}
                             except Exception:
                                 pass
                             continue
