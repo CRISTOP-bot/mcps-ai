@@ -27,6 +27,29 @@ function backupConfig(p) {
   return null;
 }
 
+// Merge: keep existing working server configs; only fill in missing ones,
+// and preserve user-set env vars (never overwrite with empty values).
+function mergeServers(existing, incoming) {
+  const merged = { ...(existing || {}) };
+  for (const [name, cfg] of Object.entries(incoming || {})) {
+    if (merged[name]) {
+      // Keep existing command if its directory exists, otherwise take incoming
+      const dirIdx = merged[name].command ? merged[name].command.indexOf('--directory') : -1;
+      const dir = dirIdx >= 0 ? merged[name].command[dirIdx + 1] : null;
+      const dirOk = dir && dirExists(dir);
+      merged[name] = {
+        ...merged[name],
+        ...(dirOk ? {} : { command: cfg.command }),
+        // Preserve existing environment entries that are non-empty
+        environment: { ...(cfg.environment || {}), ...(merged[name].environment || {}) },
+      };
+    } else {
+      merged[name] = cfg;
+    }
+  }
+  return merged;
+}
+
 function dirExists(p) {
   try { return fs.statSync(p).isDirectory(); } catch { return false; }
 }

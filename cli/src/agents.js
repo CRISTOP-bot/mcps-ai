@@ -23,6 +23,33 @@ function fileExists(p) {
   try { return fs.statSync(p).isFile(); } catch { return false; }
 }
 
+function dirExists(p) {
+  try { return fs.statSync(p).isDirectory(); } catch { return false; }
+}
+
+// Merge: keep existing working server configs; only fill in missing ones,
+// and preserve user-set env vars (never overwrite with empty values).
+function mergeServers(existing, incoming) {
+  const merged = { ...(existing || {}) };
+  for (const [name, cfg] of Object.entries(incoming || {})) {
+    if (merged[name]) {
+      // Keep existing command if its directory exists, otherwise take incoming
+      const dirIdx = merged[name].command ? merged[name].command.indexOf('--directory') : -1;
+      const dir = dirIdx >= 0 ? merged[name].command[dirIdx + 1] : null;
+      const dirOk = dir && dirExists(dir);
+      merged[name] = {
+        ...merged[name],
+        ...(dirOk ? {} : { command: cfg.command }),
+        // Preserve existing environment entries that are non-empty
+        environment: { ...(cfg.environment || {}), ...(merged[name].environment || {}) },
+      };
+    } else {
+      merged[name] = cfg;
+    }
+  }
+  return merged;
+}
+
 const AGENTS = [
   {
     id: 'opencode',
@@ -36,8 +63,7 @@ const AGENTS = [
         try { current = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { current = {}; }
       }
       current.mcp = current.mcp || {};
-      current.mcp.servers = current.mcp.servers || {};
-      Object.assign(current.mcp.servers, config);
+      current.mcp.servers = mergeServers(current.mcp.servers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
     },
@@ -60,8 +86,7 @@ const AGENTS = [
       if (fileExists(p)) {
         try { current = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { current = {}; }
       }
-      current.mcpServers = current.mcpServers || {};
-      Object.assign(current.mcpServers, config);
+      current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
     },
@@ -77,8 +102,7 @@ const AGENTS = [
       if (fileExists(p)) {
         try { current = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { current = {}; }
       }
-      current.mcpServers = current.mcpServers || {};
-      Object.assign(current.mcpServers, config);
+      current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
     },
@@ -94,8 +118,7 @@ const AGENTS = [
       if (fileExists(p)) {
         try { current = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { current = {}; }
       }
-      current.mcpServers = current.mcpServers || {};
-      Object.assign(current.mcpServers, config);
+      current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
     },
@@ -111,8 +134,7 @@ const AGENTS = [
       if (fileExists(p)) {
         try { current = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { current = {}; }
       }
-      current.mcpServers = current.mcpServers || {};
-      Object.assign(current.mcpServers, config);
+      current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
     },
@@ -128,8 +150,7 @@ const AGENTS = [
       if (fileExists(p)) {
         try { current = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { current = {}; }
       }
-      current.mcpServers = current.mcpServers || {};
-      Object.assign(current.mcpServers, config);
+      current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
     },
@@ -147,8 +168,7 @@ const AGENTS = [
       }
       // OpenClaw uses mcp.servers structure
       current.mcp = current.mcp || {};
-      current.mcp.servers = current.mcp.servers || {};
-      Object.assign(current.mcp.servers, config);
+      current.mcp.servers = mergeServers(current.mcp.servers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
     },
