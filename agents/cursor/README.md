@@ -44,3 +44,25 @@ echo "cursor config creado"
 ```
 
 Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).
+
+## Filesystem MCP
+
+```json
+{
+  "filesystem": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/cursor/mcps/filesystem-mcp", "run", "main.py"]
+  }
+}
+```
+
+## System MCP
+
+```json
+{
+  "system": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/cursor/mcps/system-mcp", "run", "main.py"]
+  }
+}
+```

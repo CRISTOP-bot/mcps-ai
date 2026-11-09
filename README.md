@@ -40,6 +40,19 @@ Gestión de Gmail via API.
 - 13 herramientas: leer, enviar, responder, buscar, etiquetar emails
 - Autenticación OAuth2
 - Soporte para HTML y adjuntos
+
+### 5. Filesystem MCP (`agents/<agente>/mcps/filesystem-mcp/`)
+Read, write, and manage files on the local machine.
+- 10 herramientas: read, write, list, search, delete, move, file info, disk usage
+- Seguridad: solo directorios permitidos (home, /tmp)
+
+### 6. System MCP (`agents/<agente>/mcps/system-mcp/`)
+System info, processes, network, logs.
+- 12 herramientas: sys info, processes, memory, disk, network, ports, kill, env, logs, services, battery
+Gestión de Gmail via API.
+- 13 herramientas: leer, enviar, responder, buscar, etiquetar emails
+- Autenticación OAuth2
+- Soporte para HTML y adjuntos
 Control de servidor Minecraft via RCON.
 - 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
 - Ejecutar cualquier comando del servidor

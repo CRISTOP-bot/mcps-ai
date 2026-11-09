@@ -64,3 +64,25 @@ echo "claude config creado"
 ```
 
 Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).
+
+## Filesystem MCP
+
+```json
+{
+  "filesystem": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/claude/mcps/filesystem-mcp", "run", "main.py"]
+  }
+}
+```
+
+## System MCP
+
+```json
+{
+  "system": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/claude/mcps/system-mcp", "run", "main.py"]
+  }
+}
+```

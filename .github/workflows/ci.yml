@@ -42,3 +42,27 @@ jobs:
       - name: Verify import
         working-directory: agents/opencode/mcps/gmail-mcp
         run: uv run python -c "import main; print('Gmail MCP OK')"
+
+  test-filesystem-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: agents/opencode/mcps/filesystem-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: agents/opencode/mcps/filesystem-mcp
+        run: uv run python -c "import main; print('Filesystem MCP OK')"
+
+  test-system-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: agents/opencode/mcps/system-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: agents/opencode/mcps/system-mcp
+        run: uv run python -c "import main; print('System MCP OK')"

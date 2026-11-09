@@ -42,6 +42,18 @@ cd mcps/whatsapp-mcp/whatsapp-mcp-server
 uv sync
 ```
 
+**Filesystem MCP:**
+```bash
+cd agents/<agente>/mcps/filesystem-mcp
+uv sync
+```
+
+**System MCP:**
+```bash
+cd agents/<agente>/mcps/system-mcp
+uv sync
+```
+
 **Minecraft MCP:**
 ```bash
 cd mcps/minecraft-mcp
@@ -76,6 +88,14 @@ Formato universal para cualquier agente MCP:
         "MC_PORT": "25575",
         "MC_RCON_PASSWORD": "PASSWORD"
       }
+    },
+    "filesystem": {
+      "command": "uv",
+      "args": ["--directory", "/ABSOLUTE_PATH/mcps/filesystem-mcp", "run", "main.py"]
+    },
+    "system": {
+      "command": "uv",
+      "args": ["--directory", "/ABSOLUTE_PATH/mcps/system-mcp", "run", "main.py"]
     }
   }
 }
