@@ -1,6 +1,6 @@
 {
   "name": "mcps-ai",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCPs-AI \u2014 universal MCP servers for AI agents (Claude, OpenCode, Kiro, Cursor, Windsurf, OpenClaw)",
   "bin": {
     "mcps-ai": "cli/bin/mcps-ai.js"

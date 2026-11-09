@@ -1,32 +1,27 @@
-// GitHub Device Flow OAuth + credential backup via private Gist
+// GitHub auth via gh CLI + credential backup via private Gist
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const https = require('https');
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 const readline = require('readline');
 
 const CRED_DIR = path.join(os.homedir(), '.mcps-ai');
 const CRED_FILE = path.join(CRED_DIR, 'github-token');
 const GIST_DESCRIPTION = 'mcps-ai credentials backup (private)';
 
-function httpsRequest(options, body) {
-  return new Promise((resolve, reject) => {
-    const req = https.request(options, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve({ status: res.statusCode, headers: res.headers, body: JSON.parse(data) });
-        } catch {
-          resolve({ status: res.statusCode, headers: res.headers, body: data });
-        }
-      });
-    });
-    req.on('error', reject);
-    if (body) req.write(body);
-    req.end();
-  });
+function getToken() {
+  if (fs.existsSync(CRED_FILE)) {
+    return fs.readFileSync(CRED_FILE, 'utf8').trim();
+  }
+  // Try gh CLI (already logged in)
+  try {
+    const token = execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim();
+    if (token) {
+      saveToken(token);
+      return token;
+    }
+  } catch {}
+  return null;
 }
 
 function saveToken(token) {
@@ -34,146 +29,112 @@ function saveToken(token) {
   fs.writeFileSync(CRED_FILE, token, { mode: 0o600 });
 }
 
-function getToken() {
-  if (fs.existsSync(CRED_FILE)) {
-    return fs.readFileSync(CRED_FILE, 'utf8').trim();
-  }
-  return null;
-}
-
-function promptUserCode(userCode, verificationUrl) {
-  console.log('\n  Abre esta URL en tu navegador:');
-  console.log(`  ${verificationUrl}\n`);
-  console.log(`  E ingresa este código: ${userCode}\n`);
-  console.log('  Esperando autenticación...');
+function ask(question) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(resolve => rl.question(question, answer => { rl.close(); resolve(answer.trim()); }));
 }
 
 async function loginCommand() {
-  const clientId = process.env.MCPS_AI_GITHUB_CLIENT_ID || 'Iv23liXy4Dz7g8hDTlzK'; // public client id
-  // Request device code
-  const res = await httpsRequest({
-    hostname: 'github.com',
-    path: '/login/device/code',
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'User-Agent': 'mcps-ai-cli',
-    },
-  }, JSON.stringify({ client_id: clientId, scope: 'gist read:user' }));
+  console.log('Autenticando con GitHub...\n');
 
-  if (res.status !== 200 || !res.body.device_code) {
-    console.error('Error obteniendo device code:', res.body);
-    process.exit(1);
-  }
-
-  const { device_code, user_code, verification_uri, interval } = res.body;
-  promptUserCode(user_code, verification_uri);
-
-  // Poll for token
-  const pollInterval = (interval || 5) * 1000;
-  for (let i = 0; i < 120; i++) {
-    await new Promise(r => setTimeout(r, pollInterval));
-    const poll = await httpsRequest({
-      hostname: 'github.com',
-      path: '/login/oauth/access_token',
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'mcps-ai-cli',
-      },
-    }, JSON.stringify({ client_id: clientId, device_code, grant_type: 'urn:ietf:params:oauth:grant-type:device_code' }));
-
-    if (poll.body.access_token) {
-      saveToken(poll.body.access_token);
-      console.log('\n  ✓ Autenticado con GitHub');
-      const user = await apiGet('/user', poll.body.access_token);
-      console.log(`  Usuario: ${user.login}`);
+  // Try gh CLI first
+  try {
+    const token = execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim();
+    if (token) {
+      saveToken(token);
+      const user = execFileSync('gh', ['api', 'user', '--jq', '.login'], { encoding: 'utf8' }).trim();
+      console.log(`  ✓ Autenticado como: ${user}`);
+      console.log('  Token guardado en ~/.mcps-ai/github-token');
       return;
     }
-    if (poll.body.error === 'slow_down') {
-      await new Promise(r => setTimeout(r, 5000));
-    }
-    if (poll.body.error === 'authorization_pending') continue;
-    if (poll.body.error === 'expired_token') {
-      console.error('\n  Token expirado. Intenta de nuevo.');
-      process.exit(1);
-    }
-    if (poll.body.error === 'access_denied') {
-      console.error('\n  Acceso denegado.');
-      process.exit(1);
-    }
+  } catch {}
+
+  // gh not installed/logged in — guide user
+  console.log('gh CLI no encontrado o no autenticado.');
+  console.log('');
+  console.log('Opción 1 (recomendada): Instala gh y haz login:');
+  console.log('  sudo apt install gh');
+  console.log('  gh auth login');
+  console.log('  mcps-ai login   # Ahora funciona automáticamente');
+  console.log('');
+  console.log('Opción 2: Crea un Personal Access Token en GitHub');
+  console.log('  https://github.com/settings/tokens');
+  console.log('  Scopes: gist, read:user, repo');
+  console.log('');
+  const token = await ask('Pega tu token aquí (o Enter para cancelar): ');
+  if (token) {
+    saveToken(token);
+    console.log('  ✓ Token guardado');
+  } else {
+    console.log('Cancelado.');
   }
-  console.error('\n  Timeout esperando autenticación.');
-  process.exit(1);
+}
+
+function logoutCommand() {
+  if (fs.existsSync(CRED_FILE)) {
+    fs.unlinkSync(CRED_FILE);
+    console.log('✓ Sesión cerrada (token eliminado)');
+    console.log('Nota: gh auth logout también funciona si quieres cerrar gh.');
+  } else {
+    console.log('No estabas autenticado');
+  }
 }
 
 async function apiGet(path, token) {
-  const res = await httpsRequest({
-    hostname: 'api.github.com',
-    path,
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github+json',
-      'User-Agent': 'mcps-ai-cli',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
-  });
-  return res.body;
+  const res = execFileSync('gh', ['api', path, '--jq', '.'], { encoding: 'utf8', input: '' });
+  return JSON.parse(res);
 }
 
-async function apiPost(path, body, token) {
-  const data = JSON.stringify(body);
-  const res = await httpsRequest({
-    hostname: 'api.github.com',
-    path,
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github+json',
-      'User-Agent': 'mcps-ai-cli',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(data),
-    },
-  }, data);
+async function apiRequest(method, path, body, token) {
+  const args = ['api', '--method', method, path, '--jq', '.'];
+  if (body) {
+    args.push('--input', '-');
+    const res = execFileSync('gh', args, {
+      encoding: 'utf8',
+      input: JSON.stringify(body),
+    });
+    return JSON.parse(res);
+  }
+  const res = execFileSync('gh', args, { encoding: 'utf8' });
   return res;
 }
 
 async function findBackupGist(token) {
-  const gists = await apiGet('/gists?per_page=100', token);
-  if (Array.isArray(gists)) {
+  try {
+    const gists = await apiGet('/gists?per_page=100', token);
     return gists.find(g => g.description === GIST_DESCRIPTION) || null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 function collectCredentialFiles() {
   const files = {};
   const home = os.homedir();
-  // .env files from installed MCPs
   const dirs = [
-    path.join(home, 'mcp-servers/telegram-mcp'),
-    path.join(home, 'mcp-servers/minecraft-mcp'),
-    path.join(home, 'mcp-servers/gmail-mcp'),
-    path.join(home, '.mcps-ai/repo/agents'), // if installed via CLI
+    path.join(home, 'mcp-servers', 'telegram-mcp'),
+    path.join(home, 'mcp-servers', 'minecraft-mcp'),
+    path.join(home, 'mcp-servers', 'gmail-mcp'),
+    path.join(home, '.mcps-ai', 'repo', 'agents'),
   ];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;
-    for (const name of fs.readdirSync(dir)) {
-      const p = path.join(dir, name);
-      if (fs.statSync(p).isFile() && (name === '.env' || name === 'credentials.json' || name === 'token.json')) {
-        files[`.mcps-ai/${name}`] = fs.readFileSync(p, 'utf8');
-      }
+    const names = fs.readdirSync(dir, { withFileTypes: true })
+      .filter(e => e.isFile() && ['.env', 'credentials.json', 'token.json'].includes(e.name));
+    for (const e of names) {
+      const rel = path.relative(home, path.join(dir, e.name));
+      files[`backup/${e.name}`] = fs.readFileSync(path.join(dir, e.name), 'utf8');
     }
   }
-  // Also shared opencode config (backup only, not a secret)
-  const opencode = path.join(home, '.config/opencode/opencode.json');
-  if (fs.existsSync(opencode)) files['.config/opencode/opencode.json'] = fs.readFileSync(opencode, 'utf8');
-  const kiro = path.join(home, '.kiro/settings/mcp.json');
-  if (fs.existsSync(kiro)) files['.kiro/settings/mcp.json'] = fs.readFileSync(kiro, 'utf8');
+  // Also agent configs
+  const agentConfigs = [
+    ['opencode.json', path.join(home, '.config', 'opencode', 'opencode.json')],
+    ['kiro-mcp.json', path.join(home, '.kiro', 'settings', 'mcp.json')],
+    ['claude_desktop_config.json', path.join(home, '.config', 'claude', 'claude_desktop_config.json')],
+  ];
+  for (const [name, p] of agentConfigs) {
+    if (fs.existsSync(p)) files[`backup/${name}`] = fs.readFileSync(p, 'utf8');
+  }
   return files;
 }
 
@@ -187,39 +148,18 @@ async function backupCommand() {
   const files = collectCredentialFiles();
   const fileEntries = {};
   for (const [name, content] of Object.entries(files)) {
-    const safeName = name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    fileEntries[safeName] = { content };
+    fileEntries[name.replace(/[^a-zA-Z0-9._-]/g, '_')] = { content };
   }
 
-  const payload = {
-    description: GIST_DESCRIPTION,
-    public: false,
-    files: fileEntries,
-  };
+  const payload = { description: GIST_DESCRIPTION, public: false, files: fileEntries };
 
   const existing = await findBackupGist(token);
   if (existing) {
-    const res = await httpsRequest({
-      hostname: 'api.github.com',
-      path: `/gists/${existing.id}`,
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'User-Agent': 'mcps-ai-cli',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json',
-      },
-    }, JSON.stringify(payload));
-    console.log('✓ Backup actualizado:', `https://gist.github.com/${token ? '' : ''}${existing.id}`);
+    await apiRequest('PATCH', `/gists/${existing.id}`, payload, token);
+    console.log('✓ Backup actualizado (Gist privado):', `https://gist.github.com/${existing.id}`);
   } else {
-    const res = await apiPost('/gists', payload, token);
-    if (res.status === 201) {
-      console.log('✓ Backup creado (gist privado):', res.body.html_url);
-    } else {
-      console.error('Error creando gist:', res.body);
-      process.exit(1);
-    }
+    const res = await apiRequest('POST', '/gists', payload, token);
+    console.log('✓ Backup creado (Gist privado):', res.html_url);
   }
 }
 
@@ -232,46 +172,41 @@ async function restoreCommand() {
 
   const existing = await findBackupGist(token);
   if (!existing) {
-    console.error('No se encontró backup en tu GitHub. Ejecuta: mcps-ai backup primero');
+    console.error('No se encontró backup. Ejecuta: mcps-ai backup primero');
     process.exit(1);
   }
 
   const gist = await apiGet(`/gists/${existing.id}`, token);
-  console.log('Archivos a restaurar:');
-  for (const [name] of Object.entries(gist.files)) {
+  console.log('Archivos en el backup:');
+  for (const name of Object.keys(gist.files)) {
     console.log(`  - ${name}`);
   }
 
-  const answer = await ask('¿Restaurar? Esto sobrescribirá archivos locales existentes. [y/N]: ');
+  const answer = await ask('¿Restaurar? Sobrescribe archivos locales. [y/N]: ');
   if (answer.toLowerCase() !== 'y') {
     console.log('Cancelado.');
     return;
   }
 
+  const home = os.homedir();
   for (const [name, file] of Object.entries(gist.files)) {
-    const dest = name.startsWith('.mcps-ai/')
-      ? path.join(os.homedir(), name.replace(/^\.mcps-ai\//, '.mcps-ai/'))
-      : path.join(os.homedir(), name);
+    const clean = name.replace(/^backup_/, '');
+    let dest;
+    if (clean === 'opencode.json') dest = path.join(home, '.config', 'opencode', 'opencode.json');
+    else if (clean === 'kiro-mcp.json') dest = path.join(home, '.kiro', 'settings', 'mcp.json');
+    else if (clean === 'claude_desktop_config.json') dest = path.join(home, '.config', 'claude', 'claude_desktop_config.json');
+    else if (clean.endsWith('.env') || clean === 'credentials.json' || clean === 'token.json') {
+      // Find which MCP it belongs to by current contents
+      dest = path.join(home, '.mcps-ai', 'restored', clean);
+    } else {
+      dest = path.join(home, '.mcps-ai', 'restored', clean);
+    }
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    // Backup existing
     if (fs.existsSync(dest)) fs.copyFileSync(dest, dest + '.bak');
     fs.writeFileSync(dest, file.content);
     console.log(`  ✓ Restaurado: ${dest}`);
   }
-}
-
-function ask(question) {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise(resolve => rl.question(question, answer => { rl.close(); resolve(answer.trim()); }));
-}
-
-function logoutCommand() {
-  if (fs.existsSync(CRED_FILE)) {
-    fs.unlinkSync(CRED_FILE);
-    console.log('✓ Sesión de GitHub cerrada');
-  } else {
-    console.log('No estabas autenticado');
-  }
+  console.log('\nNota: los .env se restauran en ~/.mcps-ai/restored/ — cópialos a tus MCP dirs.');
 }
 
 module.exports = { loginCommand, logoutCommand, backupCommand, restoreCommand };
