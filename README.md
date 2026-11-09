@@ -66,6 +66,7 @@ mcps-ai/
 │   ├── openclaw/
 │   └── windsurf/
 ├── cli/                     # mcps-ai CLI (published to npm)
+├── skills/                  # 46 SKILL.md para agentes AI (instalación, uso, debugging, etc.)
 ├── install.md               # Detailed setup for AI agents
 └── package.json
 ```
