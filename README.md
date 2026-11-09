@@ -102,18 +102,26 @@ mcps-ai/
 └── README.md
 ```
 
-## ⚡ Instalación rápida (npm)
+## ⚡ Instalación rápida (npm/npx)
 
 ```bash
-npx mcps-ai install
+npx github:CRISTOP-bot/mcps-ai install
 ```
 
-O con la CLI local:
+O clonar y ejecutar localmente:
 
 ```bash
 git clone https://github.com/CRISTOP-bot/mcps-ai.git
 cd mcps-ai/cli
 node bin/mcps-ai.js install
+```
+
+Para publicar en npm (requerido para `npx mcps-ai`):
+
+```bash
+npm login
+npm publish
+npx mcps-ai install
 ```
 
 ### Plataformas soportadas
