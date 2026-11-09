@@ -14,9 +14,10 @@ mcp = FastMCP("Web - opencode")
 
 def decode_bing_url(href):
     """Decode Bing redirect URL to actual URL."""
-    import base64, urllib.parse
+    import base64, html as html_module
+    # Unescape HTML entities first (&amp; -> &)
+    href = html_module.unescape(href)
     if "ck/a?" in href:
-        # Extract u= parameter
         from urllib.parse import urlparse, parse_qs
         qs = parse_qs(urlparse(href).query)
         u = qs.get("u", [""])[0]
