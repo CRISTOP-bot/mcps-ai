@@ -13,9 +13,9 @@ TELEGRAM_ALLOWED_USERS = [
 ]
 
 # OpenCode
-OPENCODE_BASE_URL = os.getenv("OPENCODE_BASE_URL", "http://127.0.0.1:4096")
-OPENCODE_DIRECTORY = os.getenv("OPENCODE_DIRECTORY", os.getcwd())
-OPENCODE_PASSWORD = os.getenv("OPENCODE_PASSWORD", "")
+AI_BASE_URL = os.getenv("AI_BASE_URL", "http://127.0.0.1:4096")
+AI_DIRECTORY = os.getenv("AI_DIRECTORY", os.getcwd())
+AI_PASSWORD = os.getenv("AI_PASSWORD", "")
 
 # Database
 DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/telegram.db")
@@ -25,11 +25,11 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "0"))  # 0 = no timeout
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "2"))
 
 # OpenCode model
-OPENCODE_MODEL_ID = os.getenv("OPENCODE_MODEL_ID", "deepseek-v4.1-flash-free")
-OPENCODE_MODEL_PROVIDER = os.getenv("OPENCODE_MODEL_PROVIDER", "opencode")
+AI_MODEL_ID = os.getenv("AI_MODEL_ID", "deepseek-v4.1-flash-free")
+AI_MODEL_PROVIDER = os.getenv("AI_MODEL_PROVIDER", "opencode")
 
 # Fallback models (tried in order when current model hits token/usage limits)
-OPENCODE_FALLBACK_MODELS = [
+AI_FALLBACK_MODELS = [
     "deepseek-v4.1-flash-free",
     "glm-5.3-flash-free",
     "iceman-free",
@@ -54,8 +54,8 @@ def validate():
         errors.append("TELEGRAM_BOT_TOKEN is required")
     if not TELEGRAM_ALLOWED_USERS:
         errors.append("TELEGRAM_ALLOWED_USERS is required (comma-separated user IDs)")
-    if not OPENCODE_BASE_URL:
-        errors.append("OPENCODE_BASE_URL is required")
+    if not AI_BASE_URL:
+        errors.append("AI_BASE_URL is required")
     return errors
 
 

@@ -1,6 +1,6 @@
-# MCPs para IA
+# MCPs para IA - Universales
 
-> Colección de servidores MCP (Model Context Protocol) universales para agentes de IA.
+> Colección de servidores MCP (Model Context Protocol) universales para cualquier agente de IA.
 
 [![GitHub](https://img.shields.io/badge/GitHub-mcps--ai-blue?logo=github)](https://github.com/CRISTOP-bot/mcps-ai)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -119,7 +119,7 @@ cd mcps/minecraft-mcp && uv run python -c "from rcon import RCONClient; r=RCONCl
 ```
 mcps-ai/
 ├── mcps/                    # Código de los MCP servers
-│   ├── telegram-mcp/        # Agente remoto OpenCode-Telegram
+│   ├── telegram-mcp/        # Agente remoto AI-Telegram
 │   ├── whatsapp-mcp/        # Integración WhatsApp
 │   └── minecraft-mcp/       # Control de Minecraft via RCON
 ├── agents/                  # Configuraciones por plataforma

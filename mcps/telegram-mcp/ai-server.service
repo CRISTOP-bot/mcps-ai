@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenCode Server
+Description=AI Server
 After=network.target
 
 [Service]

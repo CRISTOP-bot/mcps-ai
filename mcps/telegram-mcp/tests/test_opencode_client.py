@@ -1,14 +1,14 @@
-"""Tests for OpenCodeClient."""
+"""Tests for AIClient."""
 
 import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
-from opencode_client import OpenCodeClient
+from ai_client import AIClient
 
 
 @pytest.fixture
 def client():
-    return OpenCodeClient(base_url="http://127.0.0.1:49374", password="test", timeout=10)
+    return AIClient(base_url="http://127.0.0.1:49374", password="test", timeout=10)
 
 
 @pytest.mark.asyncio

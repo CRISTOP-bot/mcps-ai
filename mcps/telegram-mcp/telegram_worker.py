@@ -11,10 +11,10 @@ from datetime import datetime
 
 from config import (
     TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USERS, REQUEST_TIMEOUT,
-    TELEGRAM_MAX_MESSAGE_LENGTH, OPENCODE_MODEL_ID, OPENCODE_MODEL_PROVIDER,
+    TELEGRAM_MAX_MESSAGE_LENGTH, AI_MODEL_ID, AI_MODEL_PROVIDER,
 )
 from session_store import SessionStore
-from opencode_client import OpenCodeClient
+from ai_client import AIClient
 from task_manager import TaskManager
 
 logging.basicConfig(
@@ -29,7 +29,7 @@ TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 class TelegramWorker:
     def __init__(self):
         self.store = SessionStore()
-        self.opencode = OpenCodeClient()
+        self.opencode = AIClient()
         self.task_manager = TaskManager(max_concurrent=3)
         self.running = False
         self.start_time = time.time()
@@ -80,7 +80,7 @@ class TelegramWorker:
 
         if cmd == "/start":
             await self.send_telegram(chat_id, (
-                "🤖 OpenCode Remote Agent\n\n"
+                "🤖 AI Remote Agent\n\n"
                 "Tu computadora es ahora un servidor de agentes OpenCode.\n"
                 "Envía cualquier instrucción y OpenCode la procesará.\n\n"
                 "Comandos:\n"
@@ -132,7 +132,7 @@ class TelegramWorker:
             f"📊 Estado del sistema\n\n"
             f"Worker: ✅ Activo\n"
             f"Uptime: {hours}h {mins}m {secs}s\n"
-            f"OpenCode Server: {'✅ Conectado' if oc_ok else '❌ Desconectado'}\n"
+            f"AI Server: {'✅ Conectado' if oc_ok else '❌ Desconectado'}\n"
             f"Sesiones: {len(sessions)}\n"
             f"Tareas activas: {len(active_tasks)}\n"
             f"Usuarios autorizados: {len(TELEGRAM_ALLOWED_USERS)}\n"

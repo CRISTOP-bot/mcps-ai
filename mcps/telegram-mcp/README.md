@@ -1,4 +1,4 @@
-# OpenCode Telegram Remote Agent
+# AI Telegram Remote Agent
 
 Transforma tu computadora en un servidor personal de OpenCode controlable remotamente mediante Telegram.
 
@@ -8,7 +8,7 @@ Transforma tu computadora en un servidor personal de OpenCode controlable remota
 telegram-mcp/
 ├── main.py                  # MCP server (FastMCP, stdio)
 ├── telegram_worker.py       # Persistent Telegram worker
-├── opencode_client.py       # Async HTTP client for OpenCode Server
+├── opencode_client.py       # Async HTTP client for AI Server
 ├── session_store.py         # SQLite persistence
 ├── task_manager.py          # Task queue and processing
 ├── config.py                # Configuration management
@@ -22,13 +22,13 @@ telegram-mcp/
 
 ## Componentes
 
-### 1. OpenCode Server
+### 1. AI Server
 Servidor HTTP que expone la API de OpenCode. Debe estar corriendo permanentemente.
 
 ### 2. Telegram Worker
 Proceso persistente que:
 - Recibe mensajes de Telegram via long polling
-- Los envía a OpenCode Server
+- Los envía a AI Server
 - Retorna las respuestas a Telegram
 - Gestiona sesiones por chat
 - Maneja autorización, deduplicación y cola de tareas
@@ -67,7 +67,7 @@ REQUEST_TIMEOUT=120
 
 ## Ejecución
 
-### 1. Iniciar OpenCode Server
+### 1. Iniciar AI Server
 ```bash
 opencode serve --port 4096 --hostname 127.0.0.1
 ```
@@ -95,7 +95,7 @@ Los mensajes normales se envían directamente a OpenCode.
 - Solo usuarios en `TELEGRAM_ALLOWED_USERS` pueden usar el bot
 - Si no se configuran usuarios, se rechaza todo por defecto
 - No se exponen tokens en logs
-- OpenCode Server solo escucha en localhost
+- AI Server solo escucha en localhost
 - No se abre ningún puerto al exterior
 
 ## Inicio automático (systemd)
@@ -103,23 +103,23 @@ Los mensajes normales se envían directamente a OpenCode.
 ### Instalar servicios
 ```bash
 mkdir -p ~/.config/systemd/user
-cp opencode-server.service ~/.config/systemd/user/
-cp opencode-telegram-worker.service ~/.config/systemd/user/
+cp ai-server.service ~/.config/systemd/user/
+cp telegram-worker.service ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable opencode-server opencode-telegram-worker
-systemctl --user start opencode-server opencode-telegram-worker
+systemctl --user enable ai-server telegram-worker
+systemctl --user start ai-server telegram-worker
 ```
 
 ### Consultar estado
 ```bash
-systemctl --user status opencode-telegram-worker
-systemctl --user status opencode-server
+systemctl --user status telegram-worker
+systemctl --user status ai-server
 ```
 
 ### Ver logs
 ```bash
-journalctl --user -u opencode-telegram-worker -f
-journalctl --user -u opencode-server -f
+journalctl --user -u telegram-worker -f
+journalctl --user -u ai-server -f
 ```
 
 ### Evitar suspensión de laptop
@@ -137,17 +137,17 @@ uv run python -m pytest tests/ -v
 
 ## Solución de problemas
 
-### OpenCode Server no responde
+### AI Server no responde
 - Verificar que está corriendo: `curl -u opencode:PASSWORD http://127.0.0.1:4096/api/info`
-- Revisar logs: `journalctl --user -u opencode-server -f`
+- Revisar logs: `journalctl --user -u ai-server -f`
 
 ### Worker no recibe mensajes
 - Verificar token de Telegram
 - Verificar que no hay otro proceso usando getUpdates
-- Revisar logs: `journalctl --user -u opencode-telegram-worker -f`
+- Revisar logs: `journalctl --user -u telegram-worker -f`
 
 ### Sesión no se crea
-- Verificar que OpenCode Server está accesible
+- Verificar que AI Server está accesible
 - Verificar OPENCODE_PASSWORD en .env
 - Revisar logs del worker
 

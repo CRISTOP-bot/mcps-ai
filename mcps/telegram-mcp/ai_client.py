@@ -3,17 +3,17 @@
 import httpx
 import asyncio
 from config import (
-    OPENCODE_BASE_URL, OPENCODE_PASSWORD, REQUEST_TIMEOUT,
-    OPENCODE_MODEL_ID, OPENCODE_MODEL_PROVIDER, OPENCODE_DIRECTORY,
+    AI_BASE_URL, AI_PASSWORD, REQUEST_TIMEOUT,
+    AI_MODEL_ID, AI_MODEL_PROVIDER, AI_DIRECTORY,
 )
 
 
-class OpenCodeClient:
+class AIClient:
     """Client for communicating with OpenCode Server."""
 
     def __init__(self, base_url=None, password=None, timeout=None):
-        self.base_url = (base_url or OPENCODE_BASE_URL).rstrip("/")
-        self.password = password or OPENCODE_PASSWORD
+        self.base_url = (base_url or AI_BASE_URL).rstrip("/")
+        self.password = password or AI_PASSWORD
         self.timeout = timeout if timeout is not None else REQUEST_TIMEOUT
         self._client = None
 
@@ -52,8 +52,8 @@ class OpenCodeClient:
             payload["title"] = title
         if directory:
             payload["directory"] = directory
-        elif OPENCODE_DIRECTORY:
-            payload["directory"] = OPENCODE_DIRECTORY
+        elif AI_DIRECTORY:
+            payload["directory"] = AI_DIRECTORY
 
         resp = await client.post("/api/session", json=payload)
         resp.raise_for_status()
@@ -77,8 +77,8 @@ class OpenCodeClient:
     async def switch_model(self, session_id, model_id=None, provider_id=None):
         """Switch the model for a session."""
         client = self._get_client()
-        model_id = model_id or OPENCODE_MODEL_ID
-        provider_id = provider_id or OPENCODE_MODEL_PROVIDER
+        model_id = model_id or AI_MODEL_ID
+        provider_id = provider_id or AI_MODEL_PROVIDER
         resp = await client.post(
             f"/api/session/{session_id}/model",
             json={"model": {"id": model_id, "providerID": provider_id}},
@@ -185,10 +185,10 @@ class OpenCodeClient:
             prev_count = len(prev_msgs)
         except Exception:
             prev_count = 0
-        from config import OPENCODE_FALLBACK_MODELS
+        from config import AI_FALLBACK_MODELS
 
         # Try sending with current model, fallback on token/usage limit
-        max_retries = len(OPENCODE_FALLBACK_MODELS)
+        max_retries = len(AI_FALLBACK_MODELS)
         for attempt in range(max_retries):
             try:
                 await self.send_prompt(session_id, text)
@@ -204,8 +204,8 @@ class OpenCodeClient:
                 error_str = str(e).lower()
                 if "limit" in error_str or "token" in error_str or "429" in error_str or "free usage" in error_str or "free-limit" in error_str:
                     next_model_idx = attempt + 1
-                    if next_model_idx < len(OPENCODE_FALLBACK_MODELS):
-                        next_model = OPENCODE_FALLBACK_MODELS[next_model_idx]
+                    if next_model_idx < len(AI_FALLBACK_MODELS):
+                        next_model = AI_FALLBACK_MODELS[next_model_idx]
                         try:
                             await self.switch_model(session_id, model_id=next_model)
                             # Reset prev_count after model switch
