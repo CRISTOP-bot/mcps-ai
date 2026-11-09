@@ -111,7 +111,7 @@ cd mcps/telegram-mcp && uv run python -m pytest tests/ -v
 
 # Minecraft (con mock server)
 cd /tmp && python3 test_rcon_server.py &
-cd mcps/minecraft-mcp && uv run python -c "from rcon import RCONClient; r=RCONClient('127.0.0.1',25575,'testpass123'); r.connect(); print(r.command('list')); r.close()"
+cd mcps/minecraft-mcp && uv run python -c "from rcon import RCONClient; r=RCONClient('127.0.0.1',25575,'your_rcon_password'); r.connect(); print(r.command('list')); r.close()"
 ```
 
 ## 📁 Estructura
