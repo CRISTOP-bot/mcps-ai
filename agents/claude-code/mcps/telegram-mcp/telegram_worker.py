@@ -28,6 +28,36 @@ logger = logging.getLogger("telegram_worker")
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
 
+def strip_markdown(text):
+    """Convert markdown-ish text to plain text for Telegram."""
+    import re
+    if not text:
+        return text
+    # Code blocks ```...``` -> keep content without backticks
+    text = re.sub(r'```(?:[a-zA-Z0-9_+-]+)?\n?(.*?)```', r'\1', text, flags=re.S)
+    # Inline code `code` -> code
+    text = re.sub(r'`([^`]+)`', r'\1', text)
+    # Bold **text** -> text
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
+    # Italic *text* -> text
+    text = re.sub(r'(?<![*])\*([^*\n]+)\*(?![*])', r'\1', text)
+    # Headers ## text -> text
+    text = re.sub(r'^#{1,6}\s*', '', text, flags=re.M)
+    # Strikethrough ~~text~~ -> text
+    text = re.sub(r'~~([^~]+)~~', r'\1', text)
+    # Links [text](url) -> text (url)
+    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1 (\2)', text)
+    # Images ![alt](url) -> alt
+    text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', r'\1', text)
+    # Blockquotes > text -> text
+    text = re.sub(r'^>\s*', '', text, flags=re.M)
+    # Horizontal rules --- -> empty line
+    text = re.sub(r'^-{3,}$', '', text, flags=re.M)
+    # Excess blank lines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
+
+
 class TelegramWorker:
     def __init__(self):
         self.store = SessionStore()
@@ -252,7 +282,7 @@ class TelegramWorker:
                                 text_content = c.get("text", "")
                                 if text_content and text_content not in sent_texts:
                                     sent_texts.add(text_content)
-                                    await self.send_telegram(chat_id, text_content)
+                                    await self.send_telegram(chat_id, strip_markdown(text_content))
                             elif c.get("type") == "tool":
                                 tool_name = c.get("name", "unknown")
                                 state = c.get("state", {})
@@ -309,7 +339,7 @@ class TelegramWorker:
                                 
                                 if msg not in sent_texts:
                                     sent_texts.add(msg)
-                                    await self.send_telegram(chat_id, msg, parse_mode="Markdown")
+                                    await self.send_telegram(chat_id, strip_markdown(msg))
 
                 # Check for completion
                 for msg in new_messages:
@@ -402,7 +432,7 @@ class TelegramWorker:
 
             self.store.touch_session(chat_id)
             if final_response and final_response not in sent_texts:
-                await self.send_telegram(chat_id, final_response)
+                await self.send_telegram(chat_id, strip_markdown(final_response))
             self.store.mark_processed(update_id, chat_id, status="completed", result=(final_response or "")[:500])
         except Exception as e:
             logger.error(f"Error processing message: {e}")
