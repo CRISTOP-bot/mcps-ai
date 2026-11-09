@@ -38,8 +38,9 @@ The installer:
 1. Detects your installed AI agents automatically
 2. Clones this repo to `~/.mcps-ai/repo/`
 3. Installs Python dependencies with `uv`
-4. Prompts you for credentials (Telegram bot token, etc.)
-5. Writes agent configs; **creates `.bak` backups** and **preserves existing working configs**
+4. **Auto-configures what's trivial:** GitHub token from `gh` CLI, Playwright chromium, Orchestrator (reuses your OpenCode `AI_*` if you already have Telegram configured, detects the server port), Home Assistant (detects a local instance) — never overwrites existing `.env`
+5. Prompts you only for what needs a human (Telegram token, Minecraft RCON password, API keys)
+6. Writes agent configs; **creates `.bak` backups** and **preserves existing working configs**
 
 ## Usage
 

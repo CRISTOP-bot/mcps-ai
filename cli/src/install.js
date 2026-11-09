@@ -18,6 +18,144 @@ function fileExists(p) {
   try { return fs.statSync(p).isFile(); } catch { return false; }
 }
 
+function tcpProbe(host, port, ms = 800) {
+  return new Promise(resolve => {
+    try {
+      const net = require('net');
+      const s = new net.Socket();
+      s.setTimeout(ms);
+      s.once('connect', () => { s.destroy(); resolve(true); });
+      s.once('timeout', () => { s.destroy(); resolve(false); });
+      s.once('error', () => { s.destroy(); resolve(false); });
+      s.connect(port, host);
+    } catch { resolve(false); }
+  });
+}
+
+function httpProbe(url, ms = 1500) {
+  return new Promise(resolve => {
+    try {
+      const req = https.get(url, { timeout: ms }, res => {
+        res.resume();
+        resolve(res.statusCode < 500);
+      });
+      req.on('timeout', () => { req.destroy(); resolve(false); });
+      req.on('error', () => resolve(false));
+    } catch { resolve(false); }
+  });
+}
+
+function tryGhToken() {
+  try {
+    execSync('which gh', { stdio: 'pipe' });
+    const token = execSync('gh auth token', { stdio: 'pipe', encoding: 'utf8', timeout: 5000 }).trim();
+    return token || null;
+  } catch { return null; }
+}
+
+// Best-effort auto-configuration of connectors that are trivial to set up.
+// NEVER overwrites an existing .env; NEVER prints secrets.
+async function autoConfigure(repoDir, { interactive = false } = {}) {
+  const base = path.join(repoDir, 'mcps');
+  const done = [];
+
+  // 1) GitHub — token from gh CLI (zero config)
+  const ghEnv = path.join(base, 'github-mcp', '.env');
+  if (dirExists(path.join(base, 'github-mcp')) && !fileExists(ghEnv)) {
+    const token = tryGhToken();
+    if (token) {
+      fs.writeFileSync(ghEnv, `GITHUB_TOKEN=${token}
+`, { mode: 0o600 });
+      done.push('github (token desde gh CLI, chmod 600)');
+    } else {
+      done.push('github (gh CLI sin auth; sin configurar)');
+    }
+  } else if (fileExists(ghEnv)) {
+    done.push('github (.env existente, preservado)');
+  }
+
+  // 2) Browser — Playwright chromium (zero config)
+  const pwCache = path.join(os.homedir(), '.cache', 'ms-playwright');
+  if (dirExists(path.join(base, 'browser-mcp'))) {
+    if (dirExists(pwCache)) {
+      done.push('browser (chromium ya instalado)');
+    } else {
+      try {
+        console.log('  Instalando Playwright chromium (puede tardar 1-2 min)...');
+        run('uv run playwright install chromium', path.join(base, 'browser-mcp'));
+        done.push('browser (chromium instalado)');
+      } catch {
+        done.push('browser (playwright install falló; ejecuta: cd mcps/browser-mcp && uv run playwright install chromium)');
+      }
+    }
+  }
+
+  // 3) Orchestrator — reuse AI_* from the telegram worker config (zero config)
+  const orchEnv = path.join(base, 'orchestrator-mcp', '.env');
+  if (dirExists(path.join(base, 'orchestrator-mcp')) && !fileExists(orchEnv)) {
+    const candidates = [
+      path.join(base, 'telegram-mcp', '.env'),
+      path.join(os.homedir(), 'mcp-servers', 'telegram-mcp', '.env'),
+    ];
+    let configured = false;
+    for (const src of candidates) {
+      if (fileExists(src)) {
+        const keep = fs.readFileSync(src, 'utf8').split('\n')
+          .filter(l => /^(AI_BASE_URL|AI_PASSWORD|AI_AUTH_USER|AI_DIRECTORY|AI_MODEL_ID|AI_MODEL_PROVIDER)=/.test(l.trim()));
+        if (keep.length) {
+          fs.writeFileSync(orchEnv,
+            [...keep, 'REQUEST_TIMEOUT=0', 'DATABASE_PATH=./data/orchestra.db'].join('\n') + '\n',
+            { mode: 0o600 });
+          done.push(`orchestrator (AI_* reutilizado de ${src.includes('mcp-servers') ? '~/mcp-servers/telegram-mcp/.env' : 'telegram-mcp del repo'})`);
+          configured = true;
+          break;
+        }
+      }
+    }
+    if (!configured) {
+      // Auto-detect the OpenCode Server port, then leave the rest for the prompt
+      const up49374 = await tcpProbe('127.0.0.1', 49374);
+      const port = up49374 ? '49374' : ((await tcpProbe('127.0.0.1', 4096)) ? '4096' : '4096');
+      fs.writeFileSync(orchEnv,
+        `AI_BASE_URL=http://127.0.0.1:${port}\nAI_PASSWORD=\nAI_AUTH_USER=opencode\nAI_DIRECTORY=${os.homedir()}\nAI_MODEL_ID=deepseek-v4.1-flash-free\nAI_MODEL_PROVIDER=opencode\nREQUEST_TIMEOUT=0\nDATABASE_PATH=./data/orchestra.db\n`,
+        { mode: 0o600 });
+      done.push(`orchestrator (AI_BASE_URL detectado en :${port}; falta AI_PASSWORD)`);
+    }
+  } else if (fileExists(orchEnv)) {
+    done.push('orchestrator (.env existente, preservado)');
+  }
+
+  // 4) Home Assistant — detect reachable instance (URL only; token is personal)
+  const haEnv = path.join(base, 'homeassistant-mcp', '.env');
+  if (dirExists(path.join(base, 'homeassistant-mcp')) && !fileExists(haEnv)) {
+    const candidates = ['http://homeassistant.local:8123', 'http://127.0.0.1:8123'];
+    let detected = '';
+    for (const u of candidates) {
+      if (await httpProbe(u + '/api/')) { detected = u; break; }
+    }
+    if (detected) {
+      fs.writeFileSync(haEnv, `HA_URL=${detected}\nHA_TOKEN=\n`, { mode: 0o600 });
+      done.push(`homeassistant (instancia detectada en ${detected}; falta HA_TOKEN)`);
+    } else {
+      done.push('homeassistant (no se detectó instancia; configura HA_URL/HA_TOKEN manualmente)');
+    }
+  } else if (fileExists(haEnv)) {
+    done.push('homeassistant (.env existente, preservado)');
+  }
+
+  // 5) Minecraft — detect local server, still needs RCON password (prompted later)
+  if (dirExists(path.join(base, 'minecraft-mcp'))) {
+    const mcUp = await tcpProbe('127.0.0.1', 25575);
+    done.push(mcUp ? 'minecraft (server local detectado en :25575)' : 'minecraft (sin server local; se pedirá MC_HOST en el prompt)');
+  }
+
+  if (done.length) {
+    console.log('\nAuto-configuración:');
+    for (const d of done) console.log(`  ✓ ${d}`);
+  }
+  return done;
+}
+
 function backupConfig(p) {
   if (fileExists(p)) {
     const backup = p + '.bak.' + Date.now();
@@ -459,6 +597,9 @@ async function installCommand(args) {
     installMcpDependencies(repoDir, agent.id);
   }
 
+  // Auto-configure connectors that are trivial to set up
+  await autoConfigure(repoDir, { interactive: true });
+
   // Prompt for credentials once
   await promptCredentials(repoDir, agents[0].id);
 
@@ -483,6 +624,7 @@ async function updateCommand() {
   for (const agent of agents) {
     installMcpDependencies(repoDir, agent.id);
   }
+  await autoConfigure(repoDir, { interactive: false });
   // Re-apply configs (idempotent)
   for (const agent of agents) {
     const mcpConfig = getMcpConfigs(agent.id, repoDir);
