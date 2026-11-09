@@ -67,6 +67,7 @@ Los MCPs son **estándar MCP** y funcionan con cualquier cliente compatible:
 | Claude Code | `agents/claude-code/` |
 | Cursor | `agents/cursor/` |
 | Kiro | `agents/kiro/` |
+| OpenClaw | `agents/openclaw/` |
 | IA | `agents/ai/` |
 | Windsurf | `agents/windsurf/` |
 
@@ -127,6 +128,7 @@ mcps-ai/
 │   ├── claude-code/         # Claude Code (CLI)
 │   ├── cursor/              # Cursor
 │   ├── kiro/                # Kiro
+│   ├── openclaw/            # OpenClaw
 │   ├── ai/            # IA
 │   └── windsurf/            # Windsurf
 ├── install.md               # Guía para agentes AI
