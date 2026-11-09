@@ -149,6 +149,58 @@ async def sys_services():
 
 
 @mcp.tool
+async def sys_cpu():
+    """Show CPU usage (overall and per core)."""
+    output = run_cmd("top -bn1 | head -5")
+    return {"cpu": output}
+
+
+@mcp.tool
+async def sys_who():
+    """Show logged-in users."""
+    output = run_cmd("who")
+    return {"users": output}
+
+
+@mcp.tool
+async def sys_uptime():
+    """Show system uptime and load averages."""
+    output = run_cmd("uptime")
+    return {"uptime": output}
+
+
+@mcp.tool
+async def sys_kill_by_name(name: str, signal: str = "TERM"):
+    """Kill all processes matching a name. signal: TERM, KILL, INT, HUP."""
+    try:
+        sig = signal.upper()
+        if sig not in ["TERM", "KILL", "INT", "HUP", "STOP", "CONT"]:
+            return {"error": f"Invalid signal: {signal}"}
+        import signal as sig_module
+        sig_num = getattr(sig_module, f"SIG{sig}", None)
+        if sig_num is None:
+            return {"error": f"Unknown signal: {signal}"}
+        result = subprocess.run(["pkill", f"-{sig}", name], capture_output=True)
+        return {"status": f"Signal {sig} sent to processes matching '{name}'", "returncode": result.returncode}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def sys_services_failed():
+    """Show failed systemd services."""
+    output = run_cmd("systemctl --failed --no-pager --no-legend 2>&1 | head -20")
+    return {"failed_services": output}
+
+
+@mcp.tool
+async def sys_temperature():
+    """Show CPU and system temperatures."""
+    output = run_cmd("sensors 2>&1 | head -20 || cat /sys/class/thermal/thermal_zone*/temp 2>&1")
+    return {"temperature": output}
+
+
+@mcp.tool
 async def sys_battery():
     """Show battery status."""
     output = run_cmd("upower -i /org/freedesktop/UPower/devices/battery_BAT0 2>&1 | grep -E 'state|percentage|time|capacity' | head -5")

@@ -8,7 +8,7 @@ from rcon import RCONClient
 
 load_dotenv()
 
-mcp = FastMCP("Minecraft - cursor")
+mcp = FastMCP("Minecraft - opencode")
 
 MC_HOST = os.getenv("MC_HOST", "localhost")
 MC_PORT = int(os.getenv("MC_PORT", "25575"))
@@ -168,6 +168,88 @@ async def mc_difficulty(difficulty: str):
     try:
         result = mc_cmd(f"difficulty {difficulty}")
         return {"result": result or f"Difficulty set to {difficulty}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_give_all(item: str, count: int = 1):
+    """Give items to ALL players on the server."""
+    try:
+        result = mc_cmd(f"give @a {item} {count}")
+        return {"result": result or f"Gave {count}x {item} to all players"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_tp_all(x: float, y: float, z: float):
+    """Teleport ALL players to coordinates."""
+    try:
+        result = mc_cmd(f"tp @a {x} {y} {z}")
+        return {"result": result or f"Teleported all players to {x}, {y}, {z}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_setblock(x: int, y: int, z: int, block: str):
+    """Set a block at coordinates. Example: mc_setblock(100, 64, 200, minecraft:diamond_block)"""
+    try:
+        result = mc_cmd(f"setblock {x} {y} {z} {block}")
+        return {"result": result or f"Set {block} at {x}, {y}, {z}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_kill_all(entity: str = ""):
+    """Kill all entities (or specific entity). Example: mc_kill_all('minecraft:cow')"""
+    try:
+        target = entity or "@e"
+        result = mc_cmd(f"kill {target}")
+        return {"result": result or f"Killed {target}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_weather_time_clear():
+    """Clear weather AND set time to day."""
+    try:
+        r1 = mc_cmd("weather clear")
+        r2 = mc_cmd("time set day")
+        return {"result": f"Weather: {r1 or 'clear'} | Time: {r2 or 'day'}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_list_spawn():
+    """Show the spawn point."""
+    try:
+        result = mc_cmd("spawnpoint @s")
+        return {"result": result or "Spawnpoint shown"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_list_dimension():
+    """List the current dimension (overworld, nether, end)."""
+    try:
+        result = mc_cmd("execute in minecraft:overworld run list")
+        return {"result": result or "Dimension info"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def mc_experience(player: str, levels: int = 10):
+    """Add experience levels to a player."""
+    try:
+        result = mc_cmd(f"xp add {player} {levels} levels")
+        return {"result": result or f"Added {levels} levels to {player}"}
     except Exception as e:
         return {"error": str(e)}
 

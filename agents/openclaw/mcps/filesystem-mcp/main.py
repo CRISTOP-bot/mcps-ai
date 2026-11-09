@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-mcp = FastMCP("Filesystem - openclaw")
+mcp = FastMCP("Filesystem - opencode")
 
 # Whitelist of allowed directories (security)
 ALLOWED_DIRS = [
@@ -201,6 +201,122 @@ async def fs_file_info(path: str):
             "permissions": oct(stat.st_mode & 0o777),
             "owner": stat.st_uid,
         }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def fs_tree(path: str = ".", max_depth: int = 3, show_hidden: bool = False):
+    """Show directory tree structure."""
+    import os
+    from pathlib import Path
+    full_path = os.path.realpath(os.path.expanduser(path))
+    ok, full_path = is_path_allowed(full_path)
+    if not ok:
+        return {"error": f"Path not allowed: {path}"}
+    try:
+        tree = []
+        def walk(dir_path, depth):
+            if depth > max_depth:
+                return
+            try:
+                entries = sorted(Path(dir_path).iterdir(), key=lambda x: (not x.is_dir(), x.name.lower()))
+            except PermissionError:
+                return
+            for entry in entries:
+                if not show_hidden and entry.name.startswith("."):
+                    continue
+                indent = "  " * depth
+                prefix = "📁" if entry.is_dir() else "📄"
+                tree.append(f"{indent}{prefix} {entry.name}")
+                if entry.is_dir():
+                    walk(entry, depth + 1)
+        walk(full_path, 0)
+        return {"path": full_path, "tree": "\n".join(tree), "lines": len(tree)}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def fs_hash(path: str, algorithm: str = "sha256"):
+    """Calculate hash of a file. algorithm: md5, sha1, sha256."""
+    import hashlib
+    full_path = os.path.realpath(os.path.expanduser(path))
+    ok, full_path = is_path_allowed(full_path)
+    if not ok:
+        return {"error": f"Path not allowed: {path}"}
+    try:
+        h = hashlib.new(algorithm)
+        with open(full_path, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                h.update(chunk)
+        return {"path": full_path, "algorithm": algorithm, "hash": h.hexdigest()}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def fs_grep(path: str = ".", pattern: str = "", file_pattern: str = "*", max_results: int = 50):
+    """Search for text in files using regex."""
+    import re
+    from pathlib import Path
+    ok, full_path = is_path_allowed(os.path.realpath(os.path.expanduser(path)))
+    if not ok:
+        return {"error": f"Path not allowed: {path}"}
+    try:
+        compiled = re.compile(pattern)
+        results = []
+        for f in Path(full_path).rglob(file_pattern):
+            if len(results) >= max_results:
+                break
+            if f.is_file():
+                try:
+                    with open(f, "r", encoding="utf-8", errors="replace") as fp:
+                        for i, line in enumerate(fp, 1):
+                            if compiled.search(line):
+                                results.append({
+                                    "file": str(f),
+                                    "line": i,
+                                    "content": line.rstrip()[:300],
+                                })
+                                if len(results) >= max_results:
+                                    break
+                except (PermissionError, IsADirectoryError, UnicodeDecodeError):
+                    continue
+        return {"pattern": pattern, "matches": results, "count": len(results)}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def fs_copy(source: str, destination: str):
+    """Copy a file or directory."""
+    import shutil
+    ok_src, src = is_path_allowed(os.path.realpath(os.path.expanduser(source)))
+    ok_dst, dst = is_path_allowed(os.path.realpath(os.path.expanduser(destination)))
+    if not ok_src or not ok_dst:
+        return {"error": "Path not allowed"}
+    try:
+        if os.path.isdir(src):
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+            return {"status": "copied (dir)", "from": src, "to": dst}
+        else:
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy2(src, dst)
+            return {"status": "copied", "from": src, "to": dst}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def fs_chmod(path: str, mode: str = "644"):
+    """Change file permissions. mode as octal string (e.g., '755', '644')."""
+    ok, full_path = is_path_allowed(os.path.realpath(os.path.expanduser(path)))
+    if not ok:
+        return {"error": f"Path not allowed: {path}"}
+    try:
+        os.chmod(full_path, int(mode, 8))
+        return {"status": "permissions changed", "path": full_path, "mode": mode}
     except Exception as e:
         return {"error": str(e)}
 

@@ -359,5 +359,136 @@ async def gmail_unread_count():
         return {"error": str(e)}
 
 
+@mcp.tool
+async def gmail_star(email_id: str):
+    """Star (add STARRED label) to an email."""
+    try:
+        service = get_gmail_service()
+        service.users().messages().modify(
+            userId=GMAIL_USER, id=email_id, body={"addLabelIds": ["STARRED"]}
+        ).execute()
+        return {"status": "starred", "id": email_id}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def gmail_unstar(email_id: str):
+    """Unstar (remove STARRED label) from an email."""
+    try:
+        service = get_gmail_service()
+        service.users().messages().modify(
+            userId=GMAIL_USER, id=email_id, body={"removeLabelIds": ["STARRED"]}
+        ).execute()
+        return {"status": "unstarred", "id": email_id}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def gmail_archive(email_id: str):
+    """Archive an email (remove from INBOX)."""
+    try:
+        service = get_gmail_service()
+        service.users().messages().modify(
+            userId=GMAIL_USER, id=email_id, body={"removeLabelIds": ["INBOX"]}
+        ).execute()
+        return {"status": "archived", "id": email_id}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def gmail_forward(email_id: str, to: str, body: str = ""):
+    """Forward an email to another address."""
+    try:
+        service = get_gmail_service()
+        # Get original email
+        original = service.users().messages().get(
+            userId=GMAIL_USER, id=email_id, format="full"
+        ).execute()
+        headers = {h["name"]: h["value"] for h in original.get("payload", {}).get("headers", [])}
+
+        # Extract text body
+        body_text = ""
+        payload = original.get("payload", {})
+        if "parts" in payload:
+            for part in payload["parts"]:
+                if part.get("mimeType") == "text/plain":
+                    data = part.get("body", {}).get("data", "")
+                    if data:
+                        body_text = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+                        break
+        elif "body" in payload:
+            data = payload["body"].get("data", "")
+            if data:
+                body_text = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+
+        fwd_subject = f"Fwd: {headers.get('Subject', '')}"
+        fwd_body = f"{body}\n\n---------- Forwarded message ----------\nFrom: {headers.get('From', '')}\nDate: {headers.get('Date', '')}\nSubject: {headers.get('Subject', '')}\n\n{body_text}"
+
+        message = MIMEText(fwd_body)
+        message["to"] = to
+        message["subject"] = fwd_subject
+
+        raw = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
+        sent = service.users().messages().send(
+            userId=GMAIL_USER, body={"raw": raw}
+        ).execute()
+
+        return {"status": "forwarded", "id": sent.get("id"), "thread_id": sent.get("threadId")}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def gmail_get_thread(thread_id: str):
+    """Get all messages in a thread."""
+    try:
+        service = get_gmail_service()
+        thread = service.users().threads().get(userId=GMAIL_USER, id=thread_id, format="metadata").execute()
+        messages = []
+        for msg in thread.get("messages", []):
+            headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+            messages.append({
+                "id": msg["id"],
+                "from": headers.get("From", ""),
+                "subject": headers.get("Subject", ""),
+                "date": headers.get("Date", ""),
+                "snippet": msg.get("snippet", ""),
+            })
+        return {"thread_id": thread_id, "messages": messages, "count": len(messages)}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool
+async def gmail_get_unread():
+    """Get unread emails (up to 10)."""
+    try:
+        service = get_gmail_service()
+        results = service.users().messages().list(
+            userId=GMAIL_USER, q="is:unread", maxResults=10
+        ).execute()
+        messages = results.get("messages", [])
+        emails = []
+        for msg in messages:
+            msg_data = service.users().messages().get(
+                userId=GMAIL_USER, id=msg["id"], format="metadata",
+                metadataHeaders=["From", "Subject", "Date"]
+            ).execute()
+            headers = {h["name"]: h["value"] for h in msg_data.get("payload", {}).get("headers", [])}
+            emails.append({
+                "id": msg["id"],
+                "from": headers.get("From", ""),
+                "subject": headers.get("Subject", ""),
+                "date": headers.get("Date", ""),
+                "snippet": msg_data.get("snippet", ""),
+            })
+        return {"unread": emails, "count": len(emails)}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")

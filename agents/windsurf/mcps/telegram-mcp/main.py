@@ -6,7 +6,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
-mcp = FastMCP("Telegram Bot - windsurf")
+mcp = FastMCP("Telegram Bot - opencode")
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not BOT_TOKEN:
@@ -361,6 +361,56 @@ async def set_message_reaction(chat_id: int, message_id: int, emoji: str = "\U00
 
 
 # ---------- Commands / discoverability ----------
+
+@mcp.tool
+async def send_voice(chat_id: int, voice: str):
+    """Send a voice message. `voice` can be a URL or file_id."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{BASE_URL}/sendVoice",
+            json={"chat_id": chat_id, "voice": voice},
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+@mcp.tool
+async def send_location(chat_id: int, latitude: float, longitude: float):
+    """Send a location to a chat."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{BASE_URL}/sendLocation",
+            json={"chat_id": chat_id, "latitude": latitude, "longitude": longitude},
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+@mcp.tool
+async def send_contact(chat_id: int, phone_number: str, first_name: str, last_name: str = "", vcard: str = ""):
+    """Send a contact to a chat."""
+    async with httpx.AsyncClient() as client:
+        payload = {"chat_id": chat_id, "phone_number": phone_number, "first_name": first_name}
+        if last_name:
+            payload["last_name"] = last_name
+        if vcard:
+            payload["vcard"] = vcard
+        response = await client.post(
+            f"{BASE_URL}/sendContact",
+            json=payload,
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+@mcp.tool
+async def get_chat_member_count(chat_id: int):
+    """Get the number of members in a chat/group/channel."""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{BASE_URL}/getChatMemberCount", params={"chat_id": chat_id})
+        response.raise_for_status()
+        return response.json()
+
 
 @mcp.tool
 async def set_my_commands(commands: list[dict]):
