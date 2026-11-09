@@ -23,5 +23,4 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
-PYEOF
-echo "gitignore creado"
+

@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/mcps-ai)](https://www.npmjs.com/package/mcps-ai)
 
-**8 MCP servers, 150+ tools, one install command.** Works with Claude Desktop, Claude Code, Cursor, Kiro, Windsurf, OpenCode, and OpenClaw.
+**14 MCP servers, 220+ tools, one install command.** Works with Claude Desktop, Claude Code, Cursor, Kiro, Windsurf, OpenCode, and OpenClaw.
 
 🌐 **Website:** https://cristop-bot.github.io/mcps-ai/ · 📖 **Wiki:** https://github.com/CRISTOP-bot/mcps-ai/wiki
 
@@ -20,6 +20,12 @@
 | **System** | 18 | CPU, RAM, disco, procesos, red, logs, batería, temperatura |
 | **Web** | 4 | Búsqueda en la web (Bing), fetch de páginas, noticias, clima |
 | **Browser** | 17 | Control interactivo de browser vía Playwright |
+| **GitHub** | 16 | Repos, issues, PRs, búsqueda, releases y gists (token o `gh auth token`) |
+| **Discord** | 11 | Mensajes, DMs, reacciones, canales y miembros (bot token o webhook) |
+| **Spotify** | 14 | Búsqueda, play/pause, volumen, colas, playlists, dispositivos (OAuth + refresh token) |
+| **Slack** | 11 | Mensajes, DMs, canales, historial, usuarios, reacciones, pins (bot token) |
+| **Notion** | 11 | Búsqueda, páginas, bases de datos, bloques, usuarios (internal integration) |
+| **Home Assistant** | 11 | Estados, servicios, dominios, historial y eventos del hogar (long-lived token) |
 
 ## Install
 
@@ -68,7 +74,7 @@ mcps-ai/
 │   ├── openclaw/
 │   └── windsurf/
 ├── cli/                     # mcps-ai CLI (published to npm)
-├── skills/                  # 46 SKILL.md para agentes AI (instalación, uso, debugging, etc.)
+├── skills/                  # 109 SKILL.md para agentes AI (instalación, uso, debugging, etc.)
 ├── install.md               # Detailed setup for AI agents
 └── package.json
 ```

@@ -167,11 +167,65 @@ function getMcpConfigs(agentId, repoDir) {
       command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'browser-mcp'), 'run', 'main.py'],
     };
   }
+  if (fileExists(path.join(base, 'github-mcp', 'main.py'))) {
+    config.github = {
+      type: 'local',
+      command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'github-mcp'), 'run', 'main.py'],
+      env: process.env.GITHUB_TOKEN ? { GITHUB_TOKEN: process.env.GITHUB_TOKEN } : {},
+    };
+  }
+  if (fileExists(path.join(base, 'discord-mcp', 'main.py'))) {
+    const env = {};
+    if (process.env.DISCORD_BOT_TOKEN) env.DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+    if (process.env.DISCORD_WEBHOOK_URL) env.DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+    config.discord = {
+      type: 'local',
+      command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'discord-mcp'), 'run', 'main.py'],
+      env,
+    };
+  }
+  if (fileExists(path.join(base, 'spotify-mcp', 'main.py'))) {
+    const env = {};
+    if (process.env.SPOTIFY_CLIENT_ID) env.SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+    if (process.env.SPOTIFY_CLIENT_SECRET) env.SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+    if (process.env.SPOTIFY_REFRESH_TOKEN) env.SPOTIFY_REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
+    config.spotify = {
+      type: 'local',
+      command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'spotify-mcp'), 'run', 'main.py'],
+      env,
+    };
+  }
+  if (fileExists(path.join(base, 'slack-mcp', 'main.py'))) {
+    config.slack = {
+      type: 'local',
+      command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'slack-mcp'), 'run', 'main.py'],
+      env: process.env.SLACK_BOT_TOKEN ? { SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN } : {},
+    };
+  }
+  if (fileExists(path.join(base, 'notion-mcp', 'main.py'))) {
+    config.notion = {
+      type: 'local',
+      command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'notion-mcp'), 'run', 'main.py'],
+      env: process.env.NOTION_API_KEY ? { NOTION_API_KEY: process.env.NOTION_API_KEY } : {},
+    };
+  }
+  if (fileExists(path.join(base, 'homeassistant-mcp', 'main.py'))) {
+    const env = {};
+    if (process.env.HA_URL) env.HA_URL = process.env.HA_URL;
+    if (process.env.HA_TOKEN) env.HA_TOKEN = process.env.HA_TOKEN;
+    config.homeassistant = {
+      type: 'local',
+      command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'homeassistant-mcp'), 'run', 'main.py'],
+      env,
+    };
+  }
   return config;
 }
 
 function installMcpDependencies(repoDir, agentId) {
-  const base = path.join(repoDir, 'agents', agentId, 'mcps');
+  // Canonical layout: all MCPs live in <repo>/mcps/<name>-mcp/
+  const base = path.join(repoDir, 'mcps');
+  if (!dirExists(base)) return;
   const uv = path.join(os.homedir(), '.local/bin/uv');
   const uvCmd = fileExists(uv) ? uv : 'uv';
   const mcpDirs = fs.readdirSync(base, { withFileTypes: true }).filter(d => d.isDirectory());
@@ -195,8 +249,24 @@ function installMcpDependencies(repoDir, agentId) {
   }
 }
 
+// Write a .env file for an MCP, preserving any existing file unless the user opts in.
+async function writeEnv(baseDir, mcpName, envLines) {
+  const envPath = path.join(baseDir, mcpName, '.env');
+  const content = envLines.join('\n') + '\n';
+  if (fileExists(envPath)) {
+    const overwrite = await askYesNo(`Ya existe .env para ${mcpName}. ¿Sobrescribir?`, false);
+    if (!overwrite) {
+      console.log(`  Manteniendo .env existente (${mcpName})`);
+      return;
+    }
+  }
+  fs.writeFileSync(envPath, content);
+  console.log(`  .env creado para ${mcpName}`);
+}
+
 async function promptCredentials(repoDir, agentId, env) {
-  const base = path.join(repoDir, 'agents', agentId, 'mcps');
+  const base = path.join(repoDir, 'mcps');
+  if (!dirExists(base)) return;
   const envPath = path.join(base, 'telegram-mcp', '.env');
 
   console.log('\n=== Configuración de credenciales ===');
@@ -260,6 +330,68 @@ async function promptCredentials(repoDir, agentId, env) {
         fs.writeFileSync(mcEnvPath, mcContent + '\n');
         console.log('  .env creado');
       }
+    }
+  }
+
+  // GitHub
+  if (fileExists(path.join(base, 'github-mcp'))) {
+    const token = await ask('GITHUB_TOKEN (Enter = intentar `gh auth token` en tiempo de ejecución, o saltar): ');
+    if (token) {
+      await writeEnv(base, 'github-mcp', [`GITHUB_TOKEN=${token}`]);
+    }
+  }
+
+  // Discord
+  if (fileExists(path.join(base, 'discord-mcp'))) {
+    const botToken = await ask('DISCORD_BOT_TOKEN (Enter = saltar): ');
+    const webhook = await ask('DISCORD_WEBHOOK_URL (opcional, Enter = saltar): ');
+    if (botToken || webhook) {
+      const lines = [];
+      if (botToken) lines.push(`DISCORD_BOT_TOKEN=${botToken}`);
+      if (webhook) lines.push(`DISCORD_WEBHOOK_URL=${webhook}`);
+      await writeEnv(base, 'discord-mcp', lines);
+    }
+  }
+
+  // Spotify
+  if (fileExists(path.join(base, 'spotify-mcp'))) {
+    const cid = await ask('SPOTIFY_CLIENT_ID (Enter = saltar): ');
+    if (cid) {
+      const secret = await ask('SPOTIFY_CLIENT_SECRET: ');
+      const refresh = await ask('SPOTIFY_REFRESH_TOKEN: ');
+      await writeEnv(base, 'spotify-mcp', [
+        `SPOTIFY_CLIENT_ID=${cid}`,
+        `SPOTIFY_CLIENT_SECRET=${secret}`,
+        `SPOTIFY_REFRESH_TOKEN=${refresh}`,
+      ]);
+    }
+  }
+
+  // Slack
+  if (fileExists(path.join(base, 'slack-mcp'))) {
+    const token = await ask('SLACK_BOT_TOKEN (xoxb-..., Enter = saltar): ');
+    if (token) {
+      await writeEnv(base, 'slack-mcp', [`SLACK_BOT_TOKEN=${token}`]);
+    }
+  }
+
+  // Notion
+  if (fileExists(path.join(base, 'notion-mcp'))) {
+    const key = await ask('NOTION_API_KEY (ntn_/secret_..., Enter = saltar): ');
+    if (key) {
+      await writeEnv(base, 'notion-mcp', [`NOTION_API_KEY=${key}`]);
+    }
+  }
+
+  // Home Assistant
+  if (fileExists(path.join(base, 'homeassistant-mcp'))) {
+    const url = await ask('HA_URL [http://homeassistant.local:8123]: ');
+    if (url || process.env.HA_URL) {
+      const token = await ask('HA_TOKEN (long-lived access token, Enter = saltar): ');
+      await writeEnv(base, 'homeassistant-mcp', [
+        `HA_URL=${url || process.env.HA_URL || 'http://homeassistant.local:8123'}`,
+        `HA_TOKEN=${token || process.env.HA_TOKEN || ''}`,
+      ]);
     }
   }
 

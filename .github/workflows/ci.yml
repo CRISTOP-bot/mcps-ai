@@ -92,3 +92,75 @@ jobs:
       - name: Verify import
         working-directory: mcps/browser-mcp
         run: uv run python -c "import main; print('Browser MCP OK')"
+
+  test-github-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/github-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: mcps/github-mcp
+        run: uv run python -c "import main; print('GitHub MCP OK')"
+
+  test-discord-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/discord-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: mcps/discord-mcp
+        run: uv run python -c "import main; print('Discord MCP OK')"
+
+  test-spotify-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/spotify-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: mcps/spotify-mcp
+        run: uv run python -c "import main; print('Spotify MCP OK')"
+
+  test-slack-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/slack-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: mcps/slack-mcp
+        run: uv run python -c "import main; print('Slack MCP OK')"
+
+  test-notion-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/notion-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: mcps/notion-mcp
+        run: uv run python -c "import main; print('Notion MCP OK')"
+
+  test-homeassistant-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/homeassistant-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: mcps/homeassistant-mcp
+        run: uv run python -c "import main; print('HomeAssistant MCP OK')"
