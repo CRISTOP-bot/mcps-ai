@@ -9,8 +9,8 @@ Si el usuario te pide instalar los MCPs de este repositorio, sigue estos pasos:
 ### Paso 1: Clonar el repositorio
 
 ```bash
-git clone https://github.com/CRISTOP-bot/mcps-opencode.git
-cd mcps-opencode
+git clone https://github.com/CRISTOP-bot/mcps-ai.git
+cd mcps-ai
 ```
 
 ### Paso 2: Identificar el agente/cliente del usuario

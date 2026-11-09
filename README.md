@@ -5,7 +5,7 @@ Colección de servidores MCP (Model Context Protocol) compatibles con múltiples
 ## Estructura
 
 ```
-mcps-opencode/
+mcps-ai/
 ├── mcps/                    # Código de los MCP servers (universal)
 │   ├── telegram-mcp/        # Agente remoto OpenCode-Telegram
 │   ├── whatsapp-mcp/        # Integración WhatsApp
@@ -70,8 +70,8 @@ Cada MCP tiene su propio README con instrucciones detalladas.
 
 ```bash
 # Clonar repo
-git clone https://github.com/CRISTOP-bot/mcps-opencode.git
-cd mcps-opencode
+git clone https://github.com/CRISTOP-bot/mcps-ai.git
+cd mcps-ai
 
 # Telegram MCP
 cd mcps/telegram-mcp && uv sync && cp .env.example .env
@@ -94,5 +94,3 @@ cd mcps/minecraft-mcp && uv sync && cp .env.example .env
 ## Licencia
 
 MIT
-PYEOF
-echo "README actualizado"
