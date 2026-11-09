@@ -1,0 +1,50 @@
+# Claude Desktop / Claude Code Configuration
+
+## Claude Desktop (claude_desktop_config.json)
+
+Ubicación: `~/.config/claude/claude_desktop_config.json` (Linux) o `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
+
+```json
+{
+  "mcpServers": {
+    "telegram": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+      "env": {
+        "TELEGRAM_BOT_TOKEN": "your_token_here"
+      }
+    },
+    "whatsapp": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
+    },
+    "minecraft": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/mcps/minecraft-mcp", "run", "main.py"],
+      "env": {
+        "MC_HOST": "localhost",
+        "MC_PORT": "25575",
+        "MC_RCON_PASSWORD": "your_password"
+      }
+    }
+  }
+}
+```
+
+## Claude Code (.mcp.json)
+
+Ubicación: raíz del proyecto o `~/.claude/.mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "telegram": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+      "env": { "TELEGRAM_BOT_TOKEN": "your_token" }
+    }
+  }
+}
+```
+PYEOF
+echo "claude config creado"

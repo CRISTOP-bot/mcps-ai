@@ -1,33 +1,50 @@
 # MCPs para OpenCode
 
-Colección de servidores MCP (Model Context Protocol) para OpenCode.
+Colección de servidores MCP (Model Context Protocol) compatibles con múltiples agentes.
+
+## Estructura
+
+```
+mcps-opencode/
+├── mcps/                    # Código de los MCP servers
+│   ├── telegram-mcp/        # Agente remoto OpenCode-Telegram
+│   ├── whatsapp-mcp/        # Integración WhatsApp
+│   └── minecraft-mcp/       # Control de Minecraft via RCON
+├── agents/                  # Configuraciones por plataforma
+│   ├── claude/              # Claude Desktop / Claude Code
+│   ├── opencode/            # OpenCode
+│   └── kiro/                # Kiro
+└── README.md
+```
 
 ## MCPs incluidos
 
-### 1. Telegram Remote Agent
+### 1. Telegram Remote Agent (`mcps/telegram-mcp/`)
 Agente remoto de OpenCode controlable via Telegram.
 - Worker persistente con long polling
-- OpenCode Server integration
 - SQLite para persistencia de sesiones
 - Auto-cambio de modelo cuando se acaban los tokens
 - Sin timeout para tareas largas
+- 14 tests automatizados
 
-**Directorio:** `telegram-mcp/`
-
-### 2. WhatsApp MCP
+### 2. WhatsApp MCP (`mcps/whatsapp-mcp/`)
 Integración con WhatsApp via bridge (whatsmeow).
 - Envío de mensajes y archivos
 - Gestión de chats y contactos
 - Descarga de media
 
-**Directorio:** `whatsapp-mcp/`
-
-### 3. Minecraft MCP
+### 3. Minecraft MCP (`mcps/minecraft-mcp/`)
 Control de servidor Minecraft via RCON.
 - 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
 - Ejecutar cualquier comando del servidor
 
-**Directorio:** `minecraft-mcp/`
+## Compatibilidad
+
+Los MCPs son **estándar MCP** y funcionan con:
+- **Claude Desktop** / **Claude Code** → ver `agents/claude/`
+- **OpenCode** → ver `agents/opencode/`
+- **Kiro** → ver `agents/kiro/`
+- Cualquier cliente MCP compatible
 
 ## Instalación
 
@@ -36,37 +53,6 @@ Cada MCP tiene su propio README con instrucciones detalladas.
 ### Requisitos generales
 - Python 3.10+
 - uv (gestor de paquetes)
-
-### Configuración en OpenCode
-
-Agregar en `~/.config/opencode/opencode.json`:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "telegram": {
-        "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/telegram-mcp", "run", "main.py"],
-        "environment": { "TELEGRAM_BOT_TOKEN": "your_token" }
-      },
-      "whatsapp": {
-        "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
-      },
-      "minecraft": {
-        "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/minecraft-mcp", "run", "main.py"],
-        "environment": {
-          "MC_HOST": "localhost",
-          "MC_PORT": "25575",
-          "MC_RCON_PASSWORD": "your_password"
-        }
-      }
-    }
-  }
-}
-```
 
 ## Seguridad
 
@@ -78,4 +64,4 @@ Agregar en `~/.config/opencode/opencode.json`:
 
 MIT
 PYEOF
-echo "README principal creado"
+echo "README actualizado"
