@@ -9,18 +9,18 @@ Ubicación: `~/.config/claude/claude_desktop_config.json` (Linux) o `%APPDATA%\C
   "mcpServers": {
     "telegram": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+      "args": ["--directory", "/path/to/agents/claude/mcps/telegram-mcp", "run", "main.py"],
       "env": {
         "TELEGRAM_BOT_TOKEN": "your_token_here"
       }
     },
     "whatsapp": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
+      "args": ["--directory", "/path/to/agents/claude/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
     },
     "minecraft": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/minecraft-mcp", "run", "main.py"],
+      "args": ["--directory", "/path/to/agents/claude/mcps/minecraft-mcp", "run", "main.py"],
       "env": {
         "MC_HOST": "localhost",
         "MC_PORT": "25575",
@@ -40,7 +40,7 @@ Ubicación: raíz del proyecto o `~/.claude/.mcp.json`
   "mcpServers": {
     "telegram": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+      "args": ["--directory", "/path/to/agents/claude/mcps/telegram-mcp", "run", "main.py"],
       "env": { "TELEGRAM_BOT_TOKEN": "your_token" }
     }
   }

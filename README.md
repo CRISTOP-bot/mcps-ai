@@ -1,6 +1,6 @@
-# MCPs para IA - Universales
+# MCPs para IA
 
-> Colección de servidores MCP (Model Context Protocol) universales para cualquier agente de IA.
+> Colección de servidores MCP (Model Context Protocol) universales para agentes de IA.
 
 [![GitHub](https://img.shields.io/badge/GitHub-mcps--ai-blue?logo=github)](https://github.com/CRISTOP-bot/mcps-ai)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -9,67 +9,68 @@
 
 - [MCPs incluidos](#mcps-incluidos)
 - [Compatibilidad](#compatibilidad)
-- [Instalación rápida](#instalación-rápida)
 - [Estructura](#estructura)
+- [Instalación rápida](#instalación-rápida)
 - [Seguridad](#seguridad)
 - [Licencia](#licencia)
 
 ## 🧩 MCPs incluidos
 
 ### 1. Telegram Remote Agent (`mcps/telegram-mcp/`)
-
-Convierte tu computadora en un servidor de IA controlable remotamente via Telegram.
-
-**Características:**
+Agente remoto de IA controlable via Telegram.
 - Worker persistente con long polling (24/7)
-- Integración con IA Server API
+- Integración con AI Server API
 - SQLite para persistencia de sesiones y tareas
 - Auto-cambio de modelo cuando se acaban los tokens (11 modelos de respaldo)
-- Sin timeout para tareas largas (instalaciones, compilaciones)
-- Cola de tareas con procesamiento ordenado por chat
-- Comandos: `/start`, `/help`, `/status`, `/new`, `/cancel`, `/mc`
+- Sin timeout para tareas largas
 - 14 tests automatizados
 
-**Dependencias:** Python 3.12+, FastMCP, httpx, python-dotenv
-
 ### 2. WhatsApp MCP (`mcps/whatsapp-mcp/`)
-
 Integración con WhatsApp via bridge (whatsmeow/Go).
-
-**Características:**
 - Envío de mensajes de texto, fotos, videos, audio, documentos
 - Gestión de chats y contactos
 - Descarga de media
-- Búsqueda de contactos
-- Bridge en Go para conexión multidevice
-
-**Dependencias:** Python 3.11+, Go 1.21+, whatsmeow
 
 ### 3. Minecraft MCP (`mcps/minecraft-mcp/`)
-
 Control de servidor Minecraft via RCON.
-
-**Características:**
 - 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
 - Ejecutar cualquier comando del servidor
-- Invocar entidades, efectos de poción, localizar estructuras
-- Cliente RCON puro en Python (sin dependencias externas)
-
-**Dependencias:** Python 3.10+, FastMCP
+- 4 tests automatizados
 
 ## 🔌 Compatibilidad
 
-Los MCPs son **estándar MCP** y funcionan con cualquier cliente compatible:
+Cada agente tiene su propia copia de los MCPs en `agents/<agente>/mcps/`:
 
-| Agente | Configuración |
-|---|---|
-| Claude Desktop | `agents/claude/` |
-| Claude Code | `agents/claude-code/` |
-| Cursor | `agents/cursor/` |
-| Kiro | `agents/kiro/` |
-| OpenClaw | `agents/openclaw/` |
-| IA | `agents/ai/` |
-| Windsurf | `agents/windsurf/` |
+| Agente | Directorio | Configuración |
+|---|---|---|
+| Claude Desktop | `agents/claude/` | `agents/claude/README.md` |
+| Claude Code | `agents/claude-code/` | `agents/claude-code/README.md` |
+| Cursor | `agents/cursor/` | `agents/cursor/README.md` |
+| Kiro | `agents/kiro/` | `agents/kiro/README.md` |
+| OpenClaw | `agents/openclaw/` | `agents/openclaw/README.md` |
+| OpenCode | `agents/opencode/` | `agents/opencode/README.md` |
+| Windsurf | `agents/windsurf/` | `agents/windsurf/README.md` |
+
+## 📁 Estructura
+
+```
+mcps-ai/
+├── mcps/                    # Código fuente de los MCPs
+│   ├── telegram-mcp/
+│   ├── whatsapp-mcp/
+│   └── minecraft-mcp/
+├── agents/                  # MCPs + config por agente
+│   ├── claude/mcps/         # Copia para Claude Desktop
+│   ├── claude-code/mcps/    # Copia para Claude Code
+│   ├── cursor/mcps/         # Copia para Cursor
+│   ├── kiro/mcps/           # Copia para Kiro
+│   ├── openclaw/mcps/       # Copia para OpenClaw
+│   ├── opencode/mcps/       # Copia para OpenCode
+│   └── windsurf/mcps/       # Copia para Windsurf
+├── install.md               # Guía para agentes AI
+├── setup.sh                 # Script de instalación
+└── README.md
+```
 
 ## ⚡ Instalación rápida
 
@@ -85,63 +86,30 @@ git clone https://github.com/CRISTOP-bot/mcps-ai.git
 cd mcps-ai
 ```
 
-### 2. Instalar MCPs
+### 2. Elegir tu agente
+
+Cada agente tiene sus MCPs en `agents/<agente>/mcps/`. Consulta `agents/<agente>/README.md` para configuración específica.
+
+### 3. Instalar dependencias
 
 ```bash
 # Telegram
-cd mcps/telegram-mcp && uv sync && cp .env.example .env
-# Editar .env con tus valores
+cd agents/<agente>/mcps/telegram-mcp && uv sync && cp .env.example .env
 
 # WhatsApp
-cd mcps/whatsapp-mcp/whatsapp-mcp-server && uv sync
+cd agents/<agente>/mcps/whatsapp-mcp/whatsapp-mcp-server && uv sync
 
 # Minecraft
-cd mcps/minecraft-mcp && uv sync && cp .env.example .env
-# Editar .env con tus valores
+cd agents/<agente>/mcps/minecraft-mcp && uv sync && cp .env.example .env
 ```
 
-### 3. Configurar tu agente
-
-Consulta `agents/<tu-agente>/README.md` o `install.md` para instrucciones detalladas.
-
-### 4. Verificar
-
-```bash
-# Telegram
-cd mcps/telegram-mcp && uv run python -m pytest tests/ -v
-
-# Minecraft (con mock server)
-cd /tmp && python3 test_rcon_server.py &
-cd mcps/minecraft-mcp && uv run python -c "from rcon import RCONClient; r=RCONClient('127.0.0.1',25575,'your_rcon_password'); r.connect(); print(r.command('list')); r.close()"
-```
-
-## 📁 Estructura
-
-```
-mcps-ai/
-├── mcps/                    # Código de los MCP servers
-│   ├── telegram-mcp/        # Agente remoto AI-Telegram
-│   ├── whatsapp-mcp/        # Integración WhatsApp
-│   └── minecraft-mcp/       # Control de Minecraft via RCON
-├── agents/                  # Configuraciones por plataforma
-│   ├── claude/              # Claude Desktop
-│   ├── claude-code/         # Claude Code (CLI)
-│   ├── cursor/              # Cursor
-│   ├── kiro/                # Kiro
-│   ├── openclaw/            # OpenClaw
-│   ├── ai/            # IA
-│   └── windsurf/            # Windsurf
-├── install.md               # Guía para agentes AI
-└── README.md
-```
+### 4. Editar .env con tus valores
 
 ## 🔒 Seguridad
 
 - **Nunca** incluir credenciales reales en el repositorio
 - Usar archivos `.env` (gitignored) para secretos
-- Configurar usuarios autorizados en Telegram (`TELEGRAM_ALLOWED_USERS`)
-- IA Server solo escucha en localhost
-- No exponer puertos innecesarios
+- Configurar usuarios autorizados en Telegram
 
 ## 🤖 Para agentes AI
 

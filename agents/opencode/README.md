@@ -10,16 +10,16 @@ Ubicación: `~/.config/opencode/opencode.json`
     "servers": {
       "telegram": {
         "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+        "command": ["/path/to/uv", "--directory", "/path/to/agents/opencode/mcps/telegram-mcp", "run", "main.py"],
         "environment": { "TELEGRAM_BOT_TOKEN": "your_token" }
       },
       "whatsapp": {
         "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
+        "command": ["/path/to/uv", "--directory", "/path/to/agents/opencode/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
       },
       "minecraft": {
         "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/mcps/minecraft-mcp", "run", "main.py"],
+        "command": ["/path/to/uv", "--directory", "/path/to/agents/opencode/mcps/minecraft-mcp", "run", "main.py"],
         "environment": {
           "MC_HOST": "localhost",
           "MC_PORT": "25575",

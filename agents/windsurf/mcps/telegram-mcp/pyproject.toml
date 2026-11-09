@@ -1,0 +1,13 @@
+[project]
+name = "telegram-mcp"
+version = "0.1.0"
+description = "An MCP (Model Context Protocol) server that exposes Telegram bot actions as tools for LLM clients (e.g. Claude Desktop, Claude Code)."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=3.4.4",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+    "python-dotenv>=1.2.2",
+    "httpx>=0.27.0",
+]

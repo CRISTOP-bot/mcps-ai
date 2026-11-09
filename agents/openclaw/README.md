@@ -8,16 +8,16 @@
     servers: {
       telegram: {
         command: "uv",
-        args: ["--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+        args: ["--directory", "/path/to/agents/openclaw/mcps/telegram-mcp", "run", "main.py"],
         env: { TELEGRAM_BOT_TOKEN: "your_token" },
       },
       whatsapp: {
         command: "uv",
-        args: ["--directory", "/path/to/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"],
+        args: ["--directory", "/path/to/agents/openclaw/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"],
       },
       minecraft: {
         command: "uv",
-        args: ["--directory", "/path/to/mcps/minecraft-mcp", "run", "main.py"],
+        args: ["--directory", "/path/to/agents/openclaw/mcps/minecraft-mcp", "run", "main.py"],
         env: {
           MC_HOST: "localhost",
           MC_PORT: "25575",
@@ -32,9 +32,9 @@
 ## CLI
 
 ```bash
-openclaw mcp add telegram --command uv --arg --directory --arg /path/to/mcps/telegram-mcp --arg run --arg main.py
-openclaw mcp add whatsapp --command uv --arg --directory --arg /path/to/mcps/whatsapp-mcp/whatsapp-mcp-server --arg run --arg main.py
-openclaw mcp add minecraft --command uv --arg --directory --arg /path/to/mcps/minecraft-mcp --arg run --arg main.py
+openclaw mcp add telegram --command uv --arg --directory --arg /path/to/agents/openclaw/mcps/telegram-mcp --arg run --arg main.py
+openclaw mcp add whatsapp --command uv --arg --directory --arg /path/to/agents/openclaw/mcps/whatsapp-mcp/whatsapp-mcp-server --arg run --arg main.py
+openclaw mcp add minecraft --command uv --arg --directory --arg /path/to/agents/openclaw/mcps/minecraft-mcp --arg run --arg main.py
 
 # Verificar
 openclaw mcp doctor telegram --probe

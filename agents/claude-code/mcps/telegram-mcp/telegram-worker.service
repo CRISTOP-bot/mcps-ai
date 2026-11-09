@@ -1,0 +1,14 @@
+[Unit]
+Description=AI Telegram Worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/cristopher/mcp-servers/telegram-mcp
+ExecStart=/home/cristopher/.local/bin/uv run --directory /home/cristopher/mcp-servers/telegram-mcp python telegram_worker.py
+Restart=always
+RestartSec=5
+EnvironmentFile=/home/cristopher/mcp-servers/telegram-mcp/.env
+
+[Install]
+WantedBy=default.target

@@ -9,18 +9,18 @@ Ubicación: `~/.kiro/settings/mcp.json` o `.kiro/settings/mcp.json` en el proyec
   "mcpServers": {
     "telegram": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+      "args": ["--directory", "/path/to/agents/kiro/mcps/telegram-mcp", "run", "main.py"],
       "env": {
         "TELEGRAM_BOT_TOKEN": "your_token"
       }
     },
     "whatsapp": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
+      "args": ["--directory", "/path/to/agents/kiro/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
     },
     "minecraft": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/minecraft-mcp", "run", "main.py"],
+      "args": ["--directory", "/path/to/agents/kiro/mcps/minecraft-mcp", "run", "main.py"],
       "env": {
         "MC_HOST": "localhost",
         "MC_PORT": "25575",

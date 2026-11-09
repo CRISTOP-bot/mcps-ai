@@ -7,16 +7,16 @@
   "mcpServers": {
     "telegram": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/telegram-mcp", "run", "main.py"],
+      "args": ["--directory", "/path/to/agents/cursor/mcps/telegram-mcp", "run", "main.py"],
       "env": { "TELEGRAM_BOT_TOKEN": "your_token" }
     },
     "whatsapp": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
+      "args": ["--directory", "/path/to/agents/cursor/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
     },
     "minecraft": {
       "command": "uv",
-      "args": ["--directory", "/path/to/mcps/minecraft-mcp", "run", "main.py"],
+      "args": ["--directory", "/path/to/agents/cursor/mcps/minecraft-mcp", "run", "main.py"],
       "env": {
         "MC_HOST": "localhost",
         "MC_PORT": "25575",
