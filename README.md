@@ -6,6 +6,8 @@
 
 **8 MCP servers, 150+ tools, one install command.** Works with Claude Desktop, Claude Code, Cursor, Kiro, Windsurf, OpenCode, and OpenClaw.
 
+🌐 **Website:** https://cristop-bot.github.io/mcps-ai/ · 📖 **Wiki:** https://github.com/CRISTOP-bot/mcps-ai/wiki
+
 ## What you get
 
 | MCP | Tools | What it does |
