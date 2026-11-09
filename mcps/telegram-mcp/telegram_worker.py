@@ -1,4 +1,4 @@
-"""Persistent Telegram worker for OpenCode remote agent."""
+"""Persistent Telegram worker for AI remote agent."""
 
 import asyncio
 import logging
@@ -29,7 +29,7 @@ TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 class TelegramWorker:
     def __init__(self):
         self.store = SessionStore()
-        self.opencode = AIClient()
+        self.ai = AIClient()
         self.task_manager = TaskManager(max_concurrent=3)
         self.running = False
         self.start_time = time.time()
@@ -81,14 +81,14 @@ class TelegramWorker:
         if cmd == "/start":
             await self.send_telegram(chat_id, (
                 "🤖 AI Remote Agent\n\n"
-                "Tu computadora es ahora un servidor de agentes OpenCode.\n"
-                "Envía cualquier instrucción y OpenCode la procesará.\n\n"
+                "Tu computadora es ahora un servidor de agentes de IA.\n"
+                "Envía cualquier instrucción y la IA la procesará.\n\n"
                 "Comandos:\n"
                 "/help - Ayuda\n"
                 "/status - Estado del sistema\n"
                 "/new - Nueva sesión\n"
                 "/cancel - Cancelar tarea activa\n\n"
-                "Simplemente escribe tu instrucción y OpenCode trabajará en ella."
+                "Simplemente escribe tu instrucción y la IA trabajará en ella."
             ))
             return True
 
@@ -98,9 +98,9 @@ class TelegramWorker:
                 "/start - Iniciar\n"
                 "/help - Esta ayuda\n"
                 "/status - Estado del sistema\n"
-                "/new - Crear nueva sesión de OpenCode\n"
+                "/new - Crear nueva sesión de IA\n"
                 "/cancel - Cancelar generación activa\n\n"
-                "Envía cualquier texto como instrucción para OpenCode."
+                "Envía cualquier texto como instrucción para la IA."
             ))
             return True
 
@@ -120,7 +120,7 @@ class TelegramWorker:
 
     async def _handle_status(self, chat_id):
         """Show system status."""
-        oc_ok, oc_info = await self.opencode.health_check()
+        ai_ok, ai_info = await self.ai.health_check()
         uptime = time.time() - self.start_time
         hours, rem = divmod(int(uptime), 3600)
         mins, secs = divmod(rem, 60)
@@ -132,7 +132,7 @@ class TelegramWorker:
             f"📊 Estado del sistema\n\n"
             f"Worker: ✅ Activo\n"
             f"Uptime: {hours}h {mins}m {secs}s\n"
-            f"AI Server: {'✅ Conectado' if oc_ok else '❌ Desconectado'}\n"
+            f"AI Server: {'✅ Conectado' if ai_ok else '❌ Desconectado'}\n"
             f"Sesiones: {len(sessions)}\n"
             f"Tareas activas: {len(active_tasks)}\n"
             f"Usuarios autorizados: {len(TELEGRAM_ALLOWED_USERS)}\n"
@@ -140,14 +140,14 @@ class TelegramWorker:
         await self.send_telegram(chat_id, status_text)
 
     async def _handle_new_session(self, chat_id):
-        """Create a new OpenCode session for this chat."""
+        """Create a new AI session for this chat."""
         try:
-            session = await self.opencode.create_session(
+            session = await self.ai.create_session(
                 title=f"Telegram chat {chat_id}",
                 directory=None,
             )
             session_id = session["id"]
-            await self.opencode.switch_model(session_id)
+            await self.ai.switch_model(session_id)
             self.store.save_session(chat_id, session_id)
             await self.send_telegram(chat_id, f"✅ Nueva sesión creada: {session_id}")
         except Exception as e:
@@ -158,7 +158,7 @@ class TelegramWorker:
         """Cancel active generation."""
         session = self.store.get_session(chat_id)
         if session:
-            cancelled = await self.opencode.interrupt(session["opencode_session_id"])
+            cancelled = await self.ai.interrupt(session["ai_session_id"])
             if cancelled:
                 await self.send_telegram(chat_id, "🛑 Generación cancelada.")
             else:
@@ -167,7 +167,7 @@ class TelegramWorker:
             await self.send_telegram(chat_id, "No hay sesión activa.")
 
     async def _process_message(self, chat_id, user_id, text, update_id):
-        """Process a regular message through OpenCode."""
+        """Process a regular message through AI."""
         # Check if already processed
         if self.store.is_processed(update_id):
             logger.info(f"Update {update_id} already processed, skipping")
@@ -177,25 +177,25 @@ class TelegramWorker:
         session = self.store.get_session(chat_id)
         if not session:
             try:
-                oc_session = await self.opencode.create_session(
+                ai_session = await self.ai.create_session(
                     title=f"Telegram chat {chat_id}",
                 )
-                session_id = oc_session["id"]
-                await self.opencode.switch_model(session_id)
+                session_id = ai_session["id"]
+                await self.ai.switch_model(session_id)
                 self.store.save_session(chat_id, session_id)
-                session = {"opencode_session_id": session_id}
+                session = {"ai_session_id": session_id}
             except Exception as e:
                 await self.send_telegram(chat_id, f"❌ Error creando sesión: {str(e)[:200]}")
                 self.store.mark_processed(update_id, chat_id, status="failed", result=str(e))
                 return
 
-        session_id = session["opencode_session_id"]
+        session_id = session["ai_session_id"]
 
         # Send "working" message
         await self.send_telegram(chat_id, "⏳ Trabajando en tu instrucción...")
 
         try:
-            response = await self.opencode.full_request(session_id, text, timeout=REQUEST_TIMEOUT)
+            response = await self.ai.full_request(session_id, text, timeout=REQUEST_TIMEOUT)
             self.store.touch_session(chat_id)
             if response:
                 await self.send_telegram(chat_id, response)
@@ -264,12 +264,12 @@ class TelegramWorker:
         self.running = True
         logger.info("Telegram worker starting...")
 
-        # Verify OpenCode connection
-        ok, info = await self.opencode.health_check()
+        # Verify AI connection
+        ok, info = await self.ai.health_check()
         if ok:
-            logger.info(f"OpenCode server connected: {info}")
+            logger.info(f"AI server connected: {info}")
         else:
-            logger.warning(f"OpenCode server not reachable: {info}")
+            logger.warning(f"AI server not reachable: {info}")
 
         last_update_id = self.store.get_last_update_id()
 
@@ -316,7 +316,7 @@ async def main():
     try:
         await worker.run()
     finally:
-        await worker.opencode.close()
+        await worker.ai.close()
         logger.info("Worker stopped.")
 
 

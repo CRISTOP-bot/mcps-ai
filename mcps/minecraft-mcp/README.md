@@ -1,6 +1,6 @@
 # Minecraft MCP Server
 
-Controla un servidor de Minecraft desde OpenCode/Telegram mediante RCON.
+Controla un servidor de Minecraft desde IA/Telegram mediante RCON.
 
 ## Herramientas disponibles
 

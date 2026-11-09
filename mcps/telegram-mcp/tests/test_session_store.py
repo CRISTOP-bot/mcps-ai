@@ -24,7 +24,7 @@ def test_create_and_get_session(store):
     session = store.get_session(123)
     assert session is not None
     assert session["chat_id"] == 123
-    assert session["opencode_session_id"] == "ses_abc"
+    assert session["ai_session_id"] == "ses_abc"
     assert session["directory"] == "/home/test"
 
 
@@ -36,7 +36,7 @@ def test_update_session(store):
     store.save_session(123, "ses_abc")
     store.save_session(123, "ses_xyz")
     session = store.get_session(123)
-    assert session["opencode_session_id"] == "ses_xyz"
+    assert session["ai_session_id"] == "ses_xyz"
 
 
 def test_delete_session(store):

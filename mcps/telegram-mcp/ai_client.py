@@ -1,4 +1,6 @@
-"""Async HTTP client for OpenCode Server API."""
+"""Async HTTP client for AI Server API."""
+
+import os
 
 import httpx
 import asyncio
@@ -9,7 +11,7 @@ from config import (
 
 
 class AIClient:
-    """Client for communicating with OpenCode Server."""
+    """Client for communicating with AI Server."""
 
     def __init__(self, base_url=None, password=None, timeout=None):
         self.base_url = (base_url or AI_BASE_URL).rstrip("/")
@@ -19,7 +21,7 @@ class AIClient:
 
     def _get_client(self):
         if self._client is None or self._client.is_closed:
-            auth = ("opencode", self.password) if self.password else None
+            auth = (os.getenv("AI_AUTH_USER", "opencode"), self.password) if self.password else None
             if self.timeout and self.timeout > 0:
                 timeout_config = httpx.Timeout(self.timeout, connect=10.0)
             else:
@@ -36,7 +38,7 @@ class AIClient:
             await self._client.aclose()
 
     async def health_check(self):
-        """Check if OpenCode server is reachable."""
+        """Check if AI server is reachable."""
         try:
             client = self._get_client()
             resp = await client.get("/api/info")
@@ -45,7 +47,7 @@ class AIClient:
             return False, str(e)
 
     async def create_session(self, title=None, directory=None):
-        """Create a new OpenCode session."""
+        """Create a new AI session."""
         client = self._get_client()
         payload = {}
         if title:
@@ -165,7 +167,7 @@ class AIClient:
                     if texts:
                         return "\n".join(texts)
 
-        return "Timeout: OpenCode did not respond within the time limit."
+        return "Timeout: AI did not respond within the time limit."
 
     async def interrupt(self, session_id):
         """Interrupt/cancel the current generation."""

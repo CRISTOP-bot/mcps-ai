@@ -12,7 +12,7 @@ TELEGRAM_ALLOWED_USERS = [
     int(x.strip()) for x in os.getenv("TELEGRAM_ALLOWED_USERS", "").split(",") if x.strip().isdigit()
 ]
 
-# OpenCode
+# AI Server
 AI_BASE_URL = os.getenv("AI_BASE_URL", "http://127.0.0.1:4096")
 AI_DIRECTORY = os.getenv("AI_DIRECTORY", os.getcwd())
 AI_PASSWORD = os.getenv("AI_PASSWORD", "")
@@ -24,7 +24,7 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/telegram.db")
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "0"))  # 0 = no timeout
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "2"))
 
-# OpenCode model
+# AI Server model
 AI_MODEL_ID = os.getenv("AI_MODEL_ID", "deepseek-v4.1-flash-free")
 AI_MODEL_PROVIDER = os.getenv("AI_MODEL_PROVIDER", "opencode")
 

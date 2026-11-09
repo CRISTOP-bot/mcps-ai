@@ -1,6 +1,6 @@
 # INSTALL.md - Guía de instalación para agentes AI
 
-Este archivo está diseñado para ser leído por agentes de IA (Claude, OpenCode, Kiro, Cursor, Windsurf, etc.) para instalar y configurar los MCPs de este repositorio.
+Este archivo está diseñado para ser leído por agentes de IA (Claude, IA, Kiro, Cursor, Windsurf, etc.) para instalar y configurar los MCPs de este repositorio.
 
 ## Instrucciones para el agente AI
 
@@ -16,7 +16,7 @@ cd mcps-ai
 ### Paso 2: Identificar el agente/cliente del usuario
 
 Pregunta al usuario qué agente usa o detecta automáticamente:
-- OpenCode → config en `~/.config/opencode/opencode.json`
+- IA → config en `~/.config/ai/ai.json`
 - Claude Desktop → `~/.config/claude/claude_desktop_config.json`
 - Claude Code → `.mcp.json` en la raíz del proyecto
 - Kiro → `~/.kiro/settings/mcp.json`
@@ -85,9 +85,9 @@ Formato universal para cualquier agente MCP:
 **Telegram MCP (.env):**
 - TELEGRAM_BOT_TOKEN (de @BotFather)
 - TELEGRAM_ALLOWED_USERS (IDs de Telegram, separados por coma)
-- OPENCODE_BASE_URL (http://127.0.0.1:4096)
-- OPENCODE_PASSWORD (de service.json de OpenCode)
-- OPENCODE_DIRECTORY (directorio de trabajo)
+- AI_BASE_URL (http://127.0.0.1:4096)
+- AI_PASSWORD (de service.json de IA)
+- AI_DIRECTORY (directorio de trabajo)
 - DATABASE_PATH (./data/telegram.db)
 
 **Minecraft MCP (.env):**
@@ -102,24 +102,24 @@ Formato universal para cualquier agente MCP:
 ### Paso 6: Iniciar servicios (solo Telegram Remote Agent)
 
 ```bash
-# OpenCode Server
-opencode serve --port 4096 --hostname 127.0.0.1
+# IA Server
+ai serve --port 4096 --hostname 127.0.0.1
 
 # Telegram Worker (en otra terminal)
 cd mcps/telegram-mcp && uv run python telegram_worker.py
 
 # O como servicio systemd
-systemctl --user enable --now opencode-telegram-worker
+systemctl --user enable --now ai-telegram-worker
 ```
 
 ### Paso 7: Verificar
 
 ```bash
-# Verificar OpenCode Server
-curl -u opencode:PASSWORD http://127.0.0.1:4096/api/info
+# Verificar IA Server
+curl -u ai:PASSWORD http://127.0.0.1:4096/api/info
 
 # Verificar MCPs registrados
-# (depende del agente: claude mcp list, opencode mcp list, etc.)
+# (depende del agente: claude mcp list, ai mcp list, etc.)
 ```
 
 ## Notas para el agente AI
@@ -136,7 +136,7 @@ curl -u opencode:PASSWORD http://127.0.0.1:4096/api/info
 Los MCPs usan el protocolo estándar MCP (stdio transport), por lo que son compatibles con:
 - Claude Desktop
 - Claude Code
-- OpenCode
+- IA
 - Kiro
 - Cursor
 - Windsurf

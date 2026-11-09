@@ -1,4 +1,4 @@
-"""SQLite persistence for Telegram-OpenCode sessions."""
+"""SQLite persistence for Telegram-AI sessions."""
 
 import sqlite3
 import json
@@ -21,7 +21,7 @@ class SessionStore:
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS sessions (
                     chat_id INTEGER PRIMARY KEY,
-                    opencode_session_id TEXT NOT NULL,
+                    ai_session_id TEXT NOT NULL,
                     created_at REAL NOT NULL,
                     updated_at REAL NOT NULL,
                     directory TEXT
@@ -73,10 +73,10 @@ class SessionStore:
         now = time.time()
         with self._connect() as conn:
             conn.execute("""
-                INSERT INTO sessions (chat_id, opencode_session_id, created_at, updated_at, directory)
+                INSERT INTO sessions (chat_id, ai_session_id, created_at, updated_at, directory)
                 VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(chat_id) DO UPDATE SET
-                    opencode_session_id = excluded.opencode_session_id,
+                    ai_session_id = excluded.ai_session_id,
                     updated_at = excluded.updated_at,
                     directory = excluded.directory
             """, (chat_id, session_id, now, now, directory))

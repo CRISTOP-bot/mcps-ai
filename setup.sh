@@ -43,7 +43,7 @@ echo "Next steps:"
 echo "1. Edit mcps/telegram-mcp/.env with your Telegram bot token"
 echo "2. Edit mcps/minecraft-mcp/.env with your Minecraft RCON password"
 echo "3. Configure your agent (see agents/<your-agent>/README.md)"
-echo "4. For Telegram remote agent: start OpenCode server and telegram worker"
+echo "4. For Telegram remote agent: start IA server and telegram worker"
 EOF
-chmod +x /tmp/mcps-opencode/setup.sh
+chmod +x /tmp/mcps-ai/setup.sh
 echo "setup.sh creado"

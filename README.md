@@ -18,11 +18,11 @@
 
 ### 1. Telegram Remote Agent (`mcps/telegram-mcp/`)
 
-Convierte tu computadora en un servidor de OpenCode controlable remotamente via Telegram.
+Convierte tu computadora en un servidor de IA controlable remotamente via Telegram.
 
 **Características:**
 - Worker persistente con long polling (24/7)
-- Integración con OpenCode Server API
+- Integración con IA Server API
 - SQLite para persistencia de sesiones y tareas
 - Auto-cambio de modelo cuando se acaban los tokens (11 modelos de respaldo)
 - Sin timeout para tareas largas (instalaciones, compilaciones)
@@ -67,7 +67,7 @@ Los MCPs son **estándar MCP** y funcionan con cualquier cliente compatible:
 | Claude Code | `agents/claude-code/` |
 | Cursor | `agents/cursor/` |
 | Kiro | `agents/kiro/` |
-| OpenCode | `agents/opencode/` |
+| IA | `agents/ai/` |
 | Windsurf | `agents/windsurf/` |
 
 ## ⚡ Instalación rápida
@@ -110,7 +110,7 @@ Consulta `agents/<tu-agente>/README.md` o `install.md` para instrucciones detall
 cd mcps/telegram-mcp && uv run python -m pytest tests/ -v
 
 # Minecraft (con mock server)
-cd /tmp/opencode && python3 test_rcon_server.py &
+cd /tmp && python3 test_rcon_server.py &
 cd mcps/minecraft-mcp && uv run python -c "from rcon import RCONClient; r=RCONClient('127.0.0.1',25575,'testpass123'); r.connect(); print(r.command('list')); r.close()"
 ```
 
@@ -127,7 +127,7 @@ mcps-ai/
 │   ├── claude-code/         # Claude Code (CLI)
 │   ├── cursor/              # Cursor
 │   ├── kiro/                # Kiro
-│   ├── opencode/            # OpenCode
+│   ├── ai/            # IA
 │   └── windsurf/            # Windsurf
 ├── install.md               # Guía para agentes AI
 └── README.md
@@ -138,7 +138,7 @@ mcps-ai/
 - **Nunca** incluir credenciales reales en el repositorio
 - Usar archivos `.env` (gitignored) para secretos
 - Configurar usuarios autorizados en Telegram (`TELEGRAM_ALLOWED_USERS`)
-- OpenCode Server solo escucha en localhost
+- IA Server solo escucha en localhost
 - No exponer puertos innecesarios
 
 ## 🤖 Para agentes AI

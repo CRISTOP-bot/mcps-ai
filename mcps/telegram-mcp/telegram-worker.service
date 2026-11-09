@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenCode Telegram Worker
+Description=AI Telegram Worker
 After=network.target
 
 [Service]
@@ -12,5 +12,3 @@ EnvironmentFile=/home/cristopher/mcp-servers/telegram-mcp/.env
 
 [Install]
 WantedBy=default.target
-PYEOF
-echo "service file creado"

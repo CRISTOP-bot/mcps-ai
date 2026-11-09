@@ -1,6 +1,6 @@
 # AI Telegram Remote Agent
 
-Transforma tu computadora en un servidor personal de OpenCode controlable remotamente mediante Telegram.
+Transforma tu computadora en un servidor personal de IA controlable remotamente mediante Telegram.
 
 ## Arquitectura
 
@@ -8,7 +8,7 @@ Transforma tu computadora en un servidor personal de OpenCode controlable remota
 telegram-mcp/
 ├── main.py                  # MCP server (FastMCP, stdio)
 ├── telegram_worker.py       # Persistent Telegram worker
-├── opencode_client.py       # Async HTTP client for AI Server
+├── ai_client.py       # Async HTTP client for AI Server
 ├── session_store.py         # SQLite persistence
 ├── task_manager.py          # Task queue and processing
 ├── config.py                # Configuration management
@@ -23,7 +23,7 @@ telegram-mcp/
 ## Componentes
 
 ### 1. AI Server
-Servidor HTTP que expone la API de OpenCode. Debe estar corriendo permanentemente.
+Servidor HTTP que expone la API de IA. Debe estar corriendo permanentemente.
 
 ### 2. Telegram Worker
 Proceso persistente que:
@@ -34,14 +34,14 @@ Proceso persistente que:
 - Maneja autorización, deduplicación y cola de tareas
 
 ### 3. MCP Server (main.py)
-Servidor MCP que expone herramientas de Telegram para uso dentro de OpenCode.
+Servidor MCP que expone herramientas de Telegram para uso dentro de IA.
 
 ## Instalación
 
 ### Prerrequisitos
 - Python 3.12+
 - uv (gestor de paquetes)
-- OpenCode CLI
+- IA CLI
 
 ### Setup
 
@@ -58,9 +58,9 @@ cp .env.example .env
 # .env
 TELEGRAM_BOT_TOKEN=tu_token_de_botfather
 TELEGRAM_ALLOWED_USERS=123456789  # tu user ID de Telegram
-OPENCODE_BASE_URL=http://127.0.0.1:4096
-OPENCODE_PASSWORD=tu_password_de_opencode
-OPENCODE_DIRECTORY=/home/cristopher
+AI_BASE_URL=http://127.0.0.1:4096
+AI_PASSWORD=tu_password_de_ai
+AI_DIRECTORY=/home/cristopher
 DATABASE_PATH=./data/telegram.db
 REQUEST_TIMEOUT=120
 ```
@@ -77,18 +77,18 @@ opencode serve --port 4096 --hostname 127.0.0.1
 uv run python telegram_worker.py
 ```
 
-### 3. MCP Server (automático via OpenCode)
-El MCP server se inicia automáticamente cuando OpenCode lo necesita (configurado en opencode.json).
+### 3. MCP Server (automático via IA)
+El MCP server se inicia automáticamente cuando IA lo necesita (configurado en opencode.json).
 
 ## Comandos de Telegram
 
 - `/start` - Iniciar el agente
 - `/help` - Mostrar ayuda
 - `/status` - Estado del sistema
-- `/new` - Crear nueva sesión de OpenCode
+- `/new` - Crear nueva sesión de IA
 - `/cancel` - Cancelar generación activa
 
-Los mensajes normales se envían directamente a OpenCode.
+Los mensajes normales se envían directamente a IA.
 
 ## Seguridad
 
@@ -138,7 +138,7 @@ uv run python -m pytest tests/ -v
 ## Solución de problemas
 
 ### AI Server no responde
-- Verificar que está corriendo: `curl -u opencode:PASSWORD http://127.0.0.1:4096/api/info`
+- Verificar que está corriendo: `curl -u ai:PASSWORD http://127.0.0.1:4096/api/info`
 - Revisar logs: `journalctl --user -u ai-server -f`
 
 ### Worker no recibe mensajes
@@ -148,7 +148,7 @@ uv run python -m pytest tests/ -v
 
 ### Sesión no se crea
 - Verificar que AI Server está accesible
-- Verificar OPENCODE_PASSWORD en .env
+- Verificar AI_PASSWORD en .env
 - Revisar logs del worker
 
 ## Licencia

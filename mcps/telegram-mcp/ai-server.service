@@ -7,7 +7,7 @@ Type=simple
 ExecStart=/home/cristopher/.opencode/bin/opencode serve --port 4096 --hostname 127.0.0.1
 Restart=always
 RestartSec=5
-Environment=OPENCODE_SERVER_PASSWORD=your_opencode_password_here
+Environment=AI_SERVER_PASSWORD=your_ai_server_password_here
 
 [Install]
 WantedBy=default.target
