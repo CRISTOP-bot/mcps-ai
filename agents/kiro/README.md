@@ -74,3 +74,11 @@ Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).
   }
 }
 ```
+
+## macOS
+Usa los plists de launchd incluidos en `telegram-mcp/` (en vez de systemd):
+```bash
+cp telegram-mcp/*.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.cristopher.opencode-server.plist
+launchctl load ~/Library/LaunchAgents/com.cristopher.telegram-worker.plist
+```

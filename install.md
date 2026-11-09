@@ -75,6 +75,18 @@ cp .env.example .env
 # Editar .env con los valores del usuario
 ```
 
+### Paso 3.5 (solo macOS): Instalar servicios con launchd
+
+```bash
+cp agents/<agente>/mcps/telegram-mcp/com.cristopher.opencode-server.plist ~/Library/LaunchAgents/
+cp agents/<agente>/mcps/telegram-mcp/com.cristopher.telegram-worker.plist ~/Library/LaunchAgents/
+# Edita USERNAME y OPENCODE_SERVER_PASSWORD en ambos plists
+launchctl load ~/Library/LaunchAgents/com.cristopher.opencode-server.plist
+launchctl load ~/Library/LaunchAgents/com.cristopher.telegram-worker.plist
+```
+
+Nota: En macOS los comandos de systemd no funcionan; usa launchctl.
+
 ### Paso 4: Configurar el agente
 
 Usa la configuración del directorio `agents/<agente>/README.md` correspondiente.

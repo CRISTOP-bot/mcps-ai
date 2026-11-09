@@ -103,10 +103,43 @@ mcps-ai/
 
 ## ⚡ Instalación rápida
 
+### Plataformas soportadas
+- **Linux** (Ubuntu, Debian, Fedora, Arch...)
+- **macOS** (10.15+)
+- **Windows** (básico, algunos tools Linux-específicos difieren)
+
 ### Requisitos
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) (gestor de paquetes)
 - Git
+
+### macOS — Instalación con launchd (en vez de systemd)
+
+```bash
+# 1. Instalar dependencias
+bash setup.sh
+
+# 2. Copiar plists
+cp agents/opencode/mcps/telegram-mcp/com.cristopher.opencode-server.plist ~/Library/LaunchAgents/
+cp agents/opencode/mcps/telegram-mcp/com.cristopher.telegram-worker.plist ~/Library/LaunchAgents/
+
+# 3. Editar los plists: reemplazar USERNAME y OPENCODE_SERVER_PASSWORD
+
+# 4. Cargar servicios
+launchctl load ~/Library/LaunchAgents/com.cristopher.opencode-server.plist
+launchctl load ~/Library/LaunchAgents/com.cristopher.telegram-worker.plist
+
+# 5. Verificar
+launchctl list | grep cristopher
+```
+
+### macOS — Equivalencias de comandos
+| Linux | macOS |
+|-------|-------|
+| `systemctl --user start opencode-server` | `launchctl load ~/Library/LaunchAgents/*.plist` |
+| `journalctl --user -u opencode-telegram-worker -f` | `tail -f /tmp/telegram-worker.log` |
+| `free -h` | `vm_stat` |
+| `lscpu` | `sysctl -n machdep.cpu.brand_string` |
 
 ### 1. Clonar
 

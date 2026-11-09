@@ -1,7 +1,9 @@
-"""System MCP Server - System info, processes, network, etc."""
+"""System MCP Server - Cross-platform (Linux, macOS, Windows)."""
 
 import os
 import subprocess
+import sys
+import platform
 import json
 from fastmcp import FastMCP
 from dotenv import load_dotenv
@@ -10,11 +12,15 @@ load_dotenv()
 
 mcp = FastMCP("System - opencode")
 
+IS_MACOS = sys.platform == "darwin"
+IS_LINUX = sys.platform.startswith("linux")
+IS_WINDOWS = sys.platform == "win32"
 
-def run_cmd(cmd, timeout=10):
+
+def run_cmd(cmd, timeout=10, shell=True):
     try:
-        result = subprocess.run(cmd, shell=isinstance(cmd, str), capture_output=True, text=True, timeout=timeout)
-        return result.stdout.strip()
+        result = subprocess.run(cmd, shell=shell, capture_output=True, text=True, timeout=timeout)
+        return (result.stdout.strip() + ("\n" + result.stderr.strip() if result.stderr.strip() else "")).strip()
     except Exception as e:
         return f"Error: {e}"
 
@@ -23,20 +29,29 @@ def run_cmd(cmd, timeout=10):
 async def sys_info():
     """Get system information (OS, CPU, memory, hostname)."""
     try:
-        info = {
+        if IS_MACOS:
+            cpu_brand = run_cmd("sysctl -n machdep.cpu.brand_string")
+            ncpu = run_cmd("sysctl -n hw.ncpu")
+            cpu_info = f"Model: {cpu_brand}\nCPUs: {ncpu}"
+            mem = run_cmd("vm_stat")
+            uptime = run_cmd("uptime")
+        elif IS_LINUX:
+            cpu_info = run_cmd("lscpu 2>/dev/null | grep -E 'Model name|^CPU\\(s\\)|Architecture' | head -5")
+            mem = run_cmd("free -h")
+            uptime = run_cmd("uptime")
+        else:
+            cpu_info = f"Processor: {platform.processor()}"
+            mem = f"Memory: {os.popen('wmic OS get TotalVisibleMemorySize /value').read() if IS_WINDOWS else 'N/A'}"
+            uptime = run_cmd("net statistics workstation 2>/dev/null | findstr /C:'Statistics started'")
+        return {
             "hostname": os.uname().nodename,
-            "os": run_cmd("uname -s"),
-            "kernel": run_cmd("uname -r"),
-            "arch": run_cmd("uname -m"),
-            "uptime": run_cmd("uptime -p"),
+            "os": platform.system(),
+            "release": os.uname().release,
+            "arch": platform.machine(),
+            "uptime": uptime,
+            "cpu": cpu_info.split("\n") if cpu_info else [],
+            "memory": mem,
         }
-        # CPU info
-        cpu_info = run_cmd("lscpu 2>/dev/null | grep -E 'Model name|CPU|Architecture' | head -5")
-        info["cpu"] = cpu_info.split("\n") if "Error" not in cpu_info else []
-        # Memory
-        mem = run_cmd("free -h")
-        info["memory"] = mem
-        return info
     except Exception as e:
         return {"error": str(e)}
 
@@ -45,11 +60,21 @@ async def sys_info():
 async def sys_processes(filter_name: str = "", limit: int = 20):
     """List running processes, optionally filtered by name."""
     try:
-        cmd = f"ps aux --sort=-%cpu"
-        if filter_name:
-            cmd += f" | grep -i '{filter_name}' | grep -v grep"
-        cmd += f" | head -{limit + 1}"
-        output = run_cmd(cmd)
+        if IS_WINDOWS:
+            if filter_name:
+                cmd = f'tasklist /FI "IMAGENAME eq *{filter_name}*"'
+            else:
+                cmd = "tasklist"
+            output = run_cmd(cmd)
+        else:
+            if IS_MACOS:
+                cmd = "ps aux"
+            else:
+                cmd = "ps aux --sort=-%cpu"
+            if filter_name:
+                cmd += f" | grep -i '{filter_name}' | grep -v grep"
+            cmd += f" | head -{limit + 1}"
+            output = run_cmd(cmd)
         return {"processes": output}
     except Exception as e:
         return {"error": str(e)}
@@ -58,36 +83,65 @@ async def sys_processes(filter_name: str = "", limit: int = 20):
 @mcp.tool
 async def sys_top(lines: int = 15):
     """Show top processes by CPU usage."""
-    output = run_cmd(f"ps aux --sort=-%cpu | head -{lines + 1}")
+    if IS_MACOS:
+        output = run_cmd("ps aux | sort -rk 3,3 | head -" + str(lines + 1))
+    elif IS_LINUX:
+        output = run_cmd(f"ps aux --sort=-%cpu | head -{lines + 1}")
+    else:
+        output = run_cmd("tasklist")
     return {"processes": output}
 
 
 @mcp.tool
 async def sys_memory():
     """Show memory usage."""
-    output = run_cmd("free -h")
+    if IS_MACOS:
+        output = run_cmd("vm_stat && echo '---' && top -l 1 -s 0 | grep PhysMem")
+    elif IS_LINUX:
+        output = run_cmd("free -h")
+    else:
+        output = run_cmd("wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value")
     return {"memory": output}
 
 
 @mcp.tool
 async def sys_disk():
     """Show disk usage."""
-    output = run_cmd("df -h")
+    if IS_WINDOWS:
+        output = run_cmd("wmic logicaldisk get size,freespace,caption")
+    else:
+        output = run_cmd("df -h")
     return {"disk": output}
 
 
 @mcp.tool
 async def sys_network():
     """Show network interfaces and IPs."""
-    output = run_cmd("ip addr show 2>/dev/null | grep -E '^[0-9]|inet ' | head -20")
-    return {"network": output}
+    try:
+        if IS_MACOS:
+            output = run_cmd("ifconfig | grep -E '^[a-z]|inet ' | head -30")
+        elif IS_LINUX:
+            output = run_cmd("ip addr show 2>/dev/null | grep -E '^[0-9]|inet ' | head -20 || ifconfig | head -40")
+        else:
+            output = run_cmd("ipconfig")
+        return {"network": output}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @mcp.tool
 async def sys_ports():
     """Show listening ports."""
-    output = run_cmd("ss -tuln 2>/dev/null || netstat -tuln 2>/dev/null | head -20")
-    return {"ports": output}
+    try:
+        if IS_MACOS:
+            output = run_cmd("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | head -20 || netstat -an -p tcp | grep LISTEN | head -20")
+        elif IS_LINUX:
+            output = run_cmd("ss -tuln 2>/dev/null | head -20 || netstat -tuln 2>/dev/null | head -20")
+        else:
+            output = run_cmd("netstat -an | findstr LISTENING")
+        return {"ports": output}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @mcp.tool
@@ -132,9 +186,11 @@ async def sys_env_vars(filter_name: str = ""):
 
 
 @mcp.tool
-async def sys_logs(log_path: str = "/var/log/syslog", lines: int = 50):
+async def sys_logs(log_path: str = "", lines: int = 50):
     """Read system logs."""
     try:
+        if not log_path:
+            log_path = "/var/log/system.log" if IS_MACOS else "/var/log/syslog"
         output = run_cmd(f"tail -n {lines} {log_path} 2>&1")
         return {"log": output, "path": log_path}
     except Exception as e:
@@ -143,22 +199,32 @@ async def sys_logs(log_path: str = "/var/log/syslog", lines: int = 50):
 
 @mcp.tool
 async def sys_services():
-    """List systemd services."""
-    output = run_cmd("systemctl --user list-units --type=service --state=running --no-pager --no-legend 2>&1 | head -30")
+    """List running system services."""
+    if IS_MACOS:
+        output = run_cmd("launchctl list | head -30")
+    elif IS_LINUX:
+        output = run_cmd("systemctl --user list-units --type=service --state=running --no-pager --no-legend 2>&1 | head -30")
+    else:
+        output = run_cmd("sc query state= running | head -50")
     return {"services": output}
 
 
 @mcp.tool
 async def sys_cpu():
-    """Show CPU usage (overall and per core)."""
-    output = run_cmd("top -bn1 | head -5")
+    """Show CPU usage."""
+    if IS_MACOS:
+        output = run_cmd("top -l 1 -s 0 | grep -E 'CPU usage|PhysMem' | head -2")
+    elif IS_LINUX:
+        output = run_cmd("top -bn1 | head -5")
+    else:
+        output = run_cmd("wmic cpu get loadpercentage")
     return {"cpu": output}
 
 
 @mcp.tool
 async def sys_who():
     """Show logged-in users."""
-    output = run_cmd("who")
+    output = run_cmd("who" if not IS_WINDOWS else "query user")
     return {"users": output}
 
 
@@ -188,27 +254,39 @@ async def sys_kill_by_name(name: str, signal: str = "TERM"):
 
 @mcp.tool
 async def sys_services_failed():
-    """Show failed systemd services."""
-    output = run_cmd("systemctl --failed --no-pager --no-legend 2>&1 | head -20")
+    """Show failed services."""
+    if IS_MACOS:
+        # No standard failed list; show unloaded running ones
+        output = run_cmd("launchctl list | grep -v '^-' | grep -v PID | tail -20")
+    elif IS_LINUX:
+        output = run_cmd("systemctl --failed --no-pager --no-legend 2>&1 | head -20")
+    else:
+        output = run_cmd("sc query state= failed | head")
     return {"failed_services": output}
 
 
 @mcp.tool
 async def sys_temperature():
-    """Show CPU and system temperatures."""
-    output = run_cmd("sensors 2>&1 | head -20 || cat /sys/class/thermal/thermal_zone*/temp 2>&1")
+    """Show CPU/system temperature."""
+    if IS_MACOS:
+        output = run_cmd("sudo powermetrics --samplers smc -i1 -n1 2>&1 | grep -iE 'cpu|temp' | head -10 || echo 'Requires sudo; try: sudo powermetrics'")
+    elif IS_LINUX:
+        output = run_cmd("sensors 2>&1 | head -20 || cat /sys/class/thermal/thermal_zone*/temp 2>&1")
+    else:
+        output = run_cmd("wmic /namespace:\\\\root\\wmi PATH MSAcpi_ThermalZoneTemperature get CurrentTemperature")
     return {"temperature": output}
 
 
 @mcp.tool
 async def sys_battery():
     """Show battery status."""
-    output = run_cmd("upower -i /org/freedesktop/UPower/devices/battery_BAT0 2>&1 | grep -E 'state|percentage|time|capacity' | head -5")
-    if output:
-        return {"battery": output}
-    # Fallback
-    output = run_cmd("cat /sys/class/power_supply/BAT*/capacity 2>&1")
-    return {"battery_capacity": output}
+    if IS_MACOS:
+        output = run_cmd("pmset -g batt")
+    elif IS_LINUX:
+        output = run_cmd("upower -i /org/freedesktop/UPower/devices/battery_BAT0 2>&1 | grep -E 'state|percentage|time|capacity' | head -5 || cat /sys/class/power_supply/BAT*/capacity 2>&1")
+    else:
+        output = run_cmd("wmic path Win32_Battery get BatteryStatus,EstimatedChargeRemaining")
+    return {"battery": output}
 
 
 if __name__ == "__main__":
