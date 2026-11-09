@@ -6,7 +6,7 @@ Colección de servidores MCP (Model Context Protocol) compatibles con múltiples
 
 ```
 mcps-opencode/
-├── mcps/                    # Código de los MCP servers
+├── mcps/                    # Código de los MCP servers (universal)
 │   ├── telegram-mcp/        # Agente remoto OpenCode-Telegram
 │   ├── whatsapp-mcp/        # Integración WhatsApp
 │   └── minecraft-mcp/       # Control de Minecraft via RCON
@@ -17,8 +17,13 @@ mcps-opencode/
 │   ├── kiro/                # Kiro
 │   ├── opencode/            # OpenCode
 │   └── windsurf/            # Windsurf
+├── install.md               # Guía de instalación para agentes AI
 └── README.md
 ```
+
+## Instalación para agentes AI
+
+Si eres un agente de IA (Claude, OpenCode, Kiro, etc.), lee `install.md` para instrucciones detalladas de instalación.
 
 ## MCPs incluidos
 
