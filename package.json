@@ -1,7 +1,7 @@
 {
   "name": "mcps-ai",
   "version": "1.0.0",
-  "description": "MCPs-AI — universal MCP servers for AI agents (Claude, OpenCode, Kiro, Cursor, Windsurf, OpenClaw)",
+  "description": "MCPs-AI \u2014 universal MCP servers for AI agents (Claude, OpenCode, Kiro, Cursor, Windsurf, OpenClaw)",
   "bin": {
     "mcps-ai": "cli/bin/mcps-ai.js"
   },
@@ -14,10 +14,9 @@
     "setup.sh"
   ],
   "scripts": {
-    "install": "node cli/bin/mcps-ai.js install",
+    "start": "node cli/bin/mcps-ai.js",
     "status": "node cli/bin/mcps-ai.js status",
-    "doctor": "node cli/bin/mcps-ai.js doctor",
-    "update": "node cli/bin/mcps-ai.js update"
+    "doctor": "node cli/bin/mcps-ai.js doctor"
   },
   "license": "MIT",
   "engines": {
