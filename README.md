@@ -16,7 +16,7 @@
 
 ## 🧩 MCPs incluidos
 
-### 1. Telegram Remote Agent (`mcps/telegram-mcp/`)
+### 1. Telegram Remote Agent (`agents/<agente>/mcps/telegram-mcp/`)
 Agente remoto de IA controlable via Telegram.
 - Worker persistente con long polling (24/7)
 - Integración con AI Server API
@@ -25,13 +25,13 @@ Agente remoto de IA controlable via Telegram.
 - Sin timeout para tareas largas
 - 14 tests automatizados
 
-### 2. WhatsApp MCP (`mcps/whatsapp-mcp/`)
+### 2. WhatsApp MCP (`agents/<agente>/mcps/whatsapp-mcp/`)
 Integración con WhatsApp via bridge (whatsmeow/Go).
 - Envío de mensajes de texto, fotos, videos, audio, documentos
 - Gestión de chats y contactos
 - Descarga de media
 
-### 3. Minecraft MCP (`mcps/minecraft-mcp/`)
+### 3. Minecraft MCP (`agents/<agente>/mcps/minecraft-mcp/`)
 Control de servidor Minecraft via RCON.
 - 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
 - Ejecutar cualquier comando del servidor
@@ -55,10 +55,6 @@ Cada agente tiene su propia copia de los MCPs en `agents/<agente>/mcps/`:
 
 ```
 mcps-ai/
-├── mcps/                    # Código fuente de los MCPs
-│   ├── telegram-mcp/
-│   ├── whatsapp-mcp/
-│   └── minecraft-mcp/
 ├── agents/                  # MCPs + config por agente
 │   ├── claude/mcps/         # Copia para Claude Desktop
 │   ├── claude-code/mcps/    # Copia para Claude Code
