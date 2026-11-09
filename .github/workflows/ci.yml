@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-telegram:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: cd mcps/telegram-mcp && uv sync
+      - name: Run tests
+        run: cd mcps/telegram-mcp && uv run python -m pytest tests/ -v
+
+  test-minecraft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: cd mcps/minecraft-mcp && uv sync
+      - name: Test RCON client
+        run: |
+          cd /tmp
+          python3 -c "import socket,struct" 
+          cd mcps/minecraft-mcp && uv run python -c "import rcon; print('rcon OK')"

@@ -23,9 +23,25 @@ class RCONClient:
         self.sock.settimeout(10)
         self.sock.connect((self.host, self.port))
         # Login
-        resp = self._send(RCON_LOGIN, self.password)
-        if resp is None:
-            raise ConnectionError("RCON login failed")
+        with self._lock:
+            req_id = self._next_id()
+            packet = struct.pack("<iii", len(self.password) + 10, req_id, RCON_LOGIN) + self.password.encode("utf-8") + b"\x00\x00"
+            self.sock.sendall(packet)
+            data = b""
+            while True:
+                chunk = self.sock.recv(4096)
+                if not chunk:
+                    break
+                data += chunk
+                if len(data) >= 4:
+                    length = struct.unpack("<i", data[:4])[0]
+                    if len(data) >= 4 + length:
+                        break
+            if len(data) < 8:
+                raise ConnectionError("RCON login failed: no response")
+            resp_id = struct.unpack("<i", data[4:8])[0]
+            if resp_id == -1:
+                raise ConnectionError("RCON login failed: wrong password")
         return True
 
     def _next_id(self):
