@@ -159,7 +159,8 @@ class TelegramWorker:
         """Cancel active generation."""
         session = self.store.get_session(chat_id)
         if session:
-            cancelled = await self.ai.interrupt(session["ai_session_id"])
+            sid = session.get("ai_session_id") or session.get("opencode_session_id")
+            cancelled = await self.ai.interrupt(sid) if sid else False
             if cancelled:
                 await self.send_telegram(chat_id, "🛑 Generación cancelada.")
             else:
@@ -190,19 +191,160 @@ class TelegramWorker:
                 self.store.mark_processed(update_id, chat_id, status="failed", result=str(e))
                 return
 
-        session_id = session["ai_session_id"]
+        session_id = session.get("ai_session_id") or session.get("opencode_session_id")
+        if not session_id:
+            try:
+                ai_session = await self.ai.create_session(title=f"Telegram chat {chat_id}")
+                session_id = ai_session["id"]
+                await self.ai.switch_model(session_id)
+                self.store.save_session(chat_id, session_id)
+            except Exception as e:
+                await self.send_telegram(chat_id, f"❌ Error creando sesión: {str(e)[:200]}")
+                self.store.mark_processed(update_id, chat_id, status="failed", result=str(e))
+                return
 
         # Send "working" message
         await self.send_telegram(chat_id, "⏳ Trabajando en tu instrucción...")
 
         try:
-            response = await self.ai.full_request(session_id, text, timeout=REQUEST_TIMEOUT)
+            # Get current message count
+            try:
+                prev_msgs = await self.ai.get_messages(session_id)
+                prev_count = len(prev_msgs)
+            except Exception:
+                prev_count = 0
+
+            # Send prompt
+            await self.ai.send_prompt(session_id, text)
+
+            # Poll for progress and final response
+            elapsed = 0
+            poll_interval = 3
+            sent_texts = set()
+            final_response = None
+
+            while True:
+                await asyncio.sleep(poll_interval)
+                elapsed += poll_interval
+
+                try:
+                    messages = await self.ai.get_messages(session_id)
+                except Exception:
+                    continue
+
+                # New messages are at the top (newest first)
+                new_count = len(messages) - prev_count
+                if new_count <= 0:
+                    # No new messages yet, keep waiting
+                    if elapsed > 300:  # 5 min timeout for progress polling
+                        break
+                    continue
+
+                new_messages = messages[:new_count]
+
+                # Send any new assistant text or tool calls as progress
+                for m in reversed(new_messages):  # oldest first
+                    if m.get("type") == "assistant":
+                        content_parts = m.get("content", [])
+                        for c in content_parts:
+                            if c.get("type") == "text":
+                                text_content = c.get("text", "")
+                                if text_content and text_content not in sent_texts:
+                                    sent_texts.add(text_content)
+                                    await self.send_telegram(chat_id, text_content)
+                            elif c.get("type") == "tool":
+                                tool_name = c.get("name", "unknown")
+                                state = c.get("state", {})
+                                status = state.get("status", "unknown")
+                                tool_input = state.get("input", {})
+                                
+                                # Build detailed message
+                                detail = ""
+                                if tool_input:
+                                    if "command" in tool_input:
+                                        cmd = tool_input["command"]
+                                        # Truncate long commands
+                                        if len(cmd) > 150:
+                                            cmd = cmd[:150] + "..."
+                                        detail = f"`{cmd}`"
+                                    elif "filePath" in tool_input:
+                                        detail = f"`{tool_input['filePath']}`"
+                                    elif "path" in tool_input:
+                                        detail = f"`{tool_input['path']}`"
+                                    elif "query" in tool_input:
+                                        detail = f"`{tool_input['query']}`"
+                                    elif "url" in tool_input:
+                                        detail = f"`{tool_input['url']}`"
+                                    else:
+                                        # Show first key=value
+                                        for k, v in list(tool_input.items())[:2]:
+                                            val = str(v)
+                                            if len(val) > 80:
+                                                val = val[:80] + "..."
+                                            detail += f"{k}={val} "
+                                        detail = detail.strip()
+
+                                if status == "running":
+                                    msg = f"🔧 Ejecutando `{tool_name}`\n{detail}" if detail else f"🔧 Ejecutando `{tool_name}`..."
+                                elif status == "completed":
+                                    # Show output if available
+                                    output = ""
+                                    content_out = state.get("content", [])
+                                    if content_out:
+                                        for c_out in content_out:
+                                            if c_out.get("type") == "text":
+                                                output = c_out.get("text", "")[:200]
+                                                break
+                                    if output:
+                                        msg = f"✅ `{tool_name}`\n```\n{output}\n```"
+                                    else:
+                                        msg = f"✅ `{tool_name}` {detail}"
+                                elif status == "error":
+                                    error = state.get("error", {})
+                                    err_msg = error.get("message", "unknown error") if isinstance(error, dict) else str(error)
+                                    msg = f"❌ `{tool_name}`: {err_msg[:100]}"
+                                else:
+                                    msg = f"🔧 `{tool_name}` ({status}) {detail}"
+                                
+                                if msg not in sent_texts:
+                                    sent_texts.add(msg)
+                                    await self.send_telegram(chat_id, msg, parse_mode="Markdown")
+
+                # Check for completion
+                for msg in new_messages:
+                    if msg.get("type") == "idle":
+                        outcome = msg.get("outcome", "")
+                        if outcome == "succeeded":
+                            # Get the last assistant message
+                            for m in new_messages:
+                                if m.get("type") == "assistant":
+                                    content_parts = m.get("content", [])
+                                    texts = [c.get("text", "") for c in content_parts if c.get("type") == "text"]
+                                    if texts:
+                                        final_response = "\n".join(texts)
+                            if not final_response:
+                                final_response = "(Sin respuesta)"
+                            break
+                        elif outcome == "failed":
+                            error = msg.get("error", {})
+                            final_response = f"❌ Error: {error.get('message', 'Unknown error')}"
+                            break
+                        elif outcome == "interrupted":
+                            final_response = "🛑 Generación interrumpida."
+                            break
+
+                if final_response is not None:
+                    break
+
+                # Safety: don't poll forever (30 min max)
+                if elapsed > 1800:
+                    final_response = "⏱ Timeout: la tarea tardó demasiado."
+                    break
+
             self.store.touch_session(chat_id)
-            if response:
-                await self.send_telegram(chat_id, response)
-            else:
-                await self.send_telegram(chat_id, "(Sin respuesta)")
-            self.store.mark_processed(update_id, chat_id, status="completed", result=response[:500] if response else None)
+            if final_response and final_response not in sent_texts:
+                await self.send_telegram(chat_id, final_response)
+            self.store.mark_processed(update_id, chat_id, status="completed", result=(final_response or "")[:500])
         except Exception as e:
             logger.error(f"Error processing message: {e}")
             await self.send_telegram(chat_id, f"❌ Error: {str(e)[:300]}")
