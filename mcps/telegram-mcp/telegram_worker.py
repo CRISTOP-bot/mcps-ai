@@ -1,6 +1,7 @@
 """Persistent Telegram worker for AI remote agent."""
 
 import asyncio
+import os
 import logging
 import signal
 import sys
@@ -87,7 +88,7 @@ class TelegramWorker:
                 "/help - Ayuda\n"
                 "/status - Estado del sistema\n"
                 "/new - Nueva sesión\n"
-                "/cancel - Cancelar tarea activa\n\n"
+                "/cancel - Cancelar tarea activa\n/mc - Controlar Minecraft\n\n"
                 "Simplemente escribe tu instrucción y la IA trabajará en ella."
             ))
             return True
@@ -257,7 +258,7 @@ class TelegramWorker:
             await self.task_manager.enqueue(chat_id, process)
             # Process queue if not already processing
             if not self.task_manager.is_processing(chat_id):
-                asyncio.ensure_future(self.task_manager.process_queue(chat_id))
+                asyncio.create_task(self.task_manager.process_queue(chat_id))
 
     async def run(self):
         """Main worker loop."""
