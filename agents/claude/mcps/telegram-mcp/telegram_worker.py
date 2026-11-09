@@ -13,6 +13,7 @@ from datetime import datetime
 from config import (
     TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USERS, REQUEST_TIMEOUT,
     TELEGRAM_MAX_MESSAGE_LENGTH, AI_MODEL_ID, AI_MODEL_PROVIDER,
+    AI_FALLBACK_MODELS,
 )
 from session_store import SessionStore
 from ai_client import AIClient
@@ -327,7 +328,65 @@ class TelegramWorker:
                             break
                         elif outcome == "failed":
                             error = msg.get("error", {})
-                            final_response = f"❌ Error: {error.get('message', 'Unknown error')}"
+                            if isinstance(error, dict):
+                                err_type = str(error.get('type', ''))
+                                err_msg = str(error.get('message', 'Unknown error'))
+                            else:
+                                err_type = ''
+                                err_msg = str(error)
+                            combined = (err_type + ' ' + err_msg).lower()
+                            is_limit = any(k in combined for k in ['limit', 'free-limit', 'free usage', '429', 'quota'])
+                            if is_limit:
+                                # Try switching to fallback models
+                                switched = False
+                                for next_model in AI_FALLBACK_MODELS:
+                                    try:
+                                        await self.ai.switch_model(session_id, model_id=next_model)
+                                        prev_msgs = await self.ai.get_messages(session_id)
+                                        prev_count = len(prev_msgs)
+                                        await self.ai.send_prompt(session_id, text)
+                                        sent_texts = set()
+                                        elapsed2 = 0
+                                        final_response_local = None
+                                        while elapsed2 < 600:
+                                            await asyncio.sleep(poll_interval)
+                                            elapsed2 += poll_interval
+                                            try:
+                                                messages2 = await self.ai.get_messages(session_id)
+                                            except Exception:
+                                                continue
+                                            new2_count = len(messages2) - prev_count
+                                            if new2_count <= 0:
+                                                continue
+                                            new2 = messages2[:new2_count]
+                                            for m2 in new2:
+                                                if m2.get("type") == "idle":
+                                                    outcome2 = m2.get("outcome", "")
+                                                    if outcome2 == "succeeded":
+                                                        for m3 in new2:
+                                                            if m3.get("type") == "assistant":
+                                                                txt = [c.get("text", "") for c in m3.get("content", []) if c.get("type") == "text"]
+                                                                if txt:
+                                                                    final_response_local = "\n".join(txt)
+                                                    elif outcome2 == "failed":
+                                                        err2 = m2.get("error", {})
+                                                        err2_msg = err2.get('message', '') if isinstance(err2, dict) else str(err2)
+                                                        if any(k in err2_msg.lower() for k in ['limit', 'free', '429', 'quota']):
+                                                            final_response_local = "SWITCH_NEXT"
+                                                            break
+                                            if final_response_local:
+                                                break
+                                        if final_response_local and final_response_local != "SWITCH_NEXT":
+                                            final_response = final_response_local
+                                            switched = True
+                                            break
+                                    except Exception:
+                                        continue
+                                if switched:
+                                    break
+                                final_response = "❌ Todos los modelos gratuitos alcanzaron su límite. Intenta más tarde."
+                            else:
+                                final_response = f"❌ Error: {err_msg[:300]}"
                             break
                         elif outcome == "interrupted":
                             final_response = "🛑 Generación interrumpida."
