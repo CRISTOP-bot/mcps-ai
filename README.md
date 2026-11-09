@@ -1,6 +1,6 @@
 # MCPs para OpenCode
 
-Colección de servidores MCP (Model Context Protocol) compatibles con múltiples agentes.
+Colección de servidores MCP (Model Context Protocol) compatibles con múltiples agentes y plataformas.
 
 ## Estructura
 
@@ -11,9 +11,12 @@ mcps-opencode/
 │   ├── whatsapp-mcp/        # Integración WhatsApp
 │   └── minecraft-mcp/       # Control de Minecraft via RCON
 ├── agents/                  # Configuraciones por plataforma
-│   ├── claude/              # Claude Desktop / Claude Code
+│   ├── claude/              # Claude Desktop
+│   ├── claude-code/         # Claude Code (CLI)
+│   ├── cursor/              # Cursor
+│   ├── kiro/                # Kiro
 │   ├── opencode/            # OpenCode
-│   └── kiro/                # Kiro
+│   └── windsurf/            # Windsurf
 └── README.md
 ```
 
@@ -26,6 +29,7 @@ Agente remoto de OpenCode controlable via Telegram.
 - Auto-cambio de modelo cuando se acaban los tokens
 - Sin timeout para tareas largas
 - 14 tests automatizados
+- Comandos: /start, /help, /status, /new, /cancel, /mc
 
 ### 2. WhatsApp MCP (`mcps/whatsapp-mcp/`)
 Integración con WhatsApp via bridge (whatsmeow).
@@ -41,9 +45,12 @@ Control de servidor Minecraft via RCON.
 ## Compatibilidad
 
 Los MCPs son **estándar MCP** y funcionan con:
-- **Claude Desktop** / **Claude Code** → ver `agents/claude/`
-- **OpenCode** → ver `agents/opencode/`
-- **Kiro** → ver `agents/kiro/`
+- **Claude Desktop** → `agents/claude/`
+- **Claude Code** → `agents/claude-code/`
+- **Cursor** → `agents/cursor/`
+- **Kiro** → `agents/kiro/`
+- **OpenCode** → `agents/opencode/`
+- **Windsurf** → `agents/windsurf/`
 - Cualquier cliente MCP compatible
 
 ## Instalación
@@ -53,6 +60,25 @@ Cada MCP tiene su propio README con instrucciones detalladas.
 ### Requisitos generales
 - Python 3.10+
 - uv (gestor de paquetes)
+
+### Setup rápido
+
+```bash
+# Clonar repo
+git clone https://github.com/CRISTOP-bot/mcps-opencode.git
+cd mcps-opencode
+
+# Telegram MCP
+cd mcps/telegram-mcp && uv sync && cp .env.example .env
+# Editar .env con tus valores
+
+# WhatsApp MCP
+cd mcps/whatsapp-mcp/whatsapp-mcp-server && uv sync
+
+# Minecraft MCP
+cd mcps/minecraft-mcp && uv sync && cp .env.example .env
+# Editar .env con tus valores
+```
 
 ## Seguridad
 
