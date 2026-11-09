@@ -66,3 +66,4 @@ def get_db_path():
         p = Path(__file__).parent / p
     p.parent.mkdir(parents=True, exist_ok=True)
     return str(p)
+AI_AUTH_USER = os.getenv("AI_AUTH_USER", "opencode")

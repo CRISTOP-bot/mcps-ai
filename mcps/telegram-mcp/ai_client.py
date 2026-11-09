@@ -1,13 +1,9 @@
 """Async HTTP client for AI Server API."""
 
 import os
-
 import httpx
 import asyncio
-from config import (
-    AI_BASE_URL, AI_PASSWORD, REQUEST_TIMEOUT,
-    AI_MODEL_ID, AI_MODEL_PROVIDER, AI_DIRECTORY,
-)
+from config import AI_BASE_URL, AI_PASSWORD, AI_DIRECTORY, REQUEST_TIMEOUT, AI_MODEL_ID, AI_MODEL_PROVIDER, AI_FALLBACK_MODELS, AI_AUTH_USER
 
 
 class AIClient:
@@ -21,7 +17,7 @@ class AIClient:
 
     def _get_client(self):
         if self._client is None or self._client.is_closed:
-            auth = (os.getenv("AI_AUTH_USER", "opencode"), self.password) if self.password else None
+            auth = (AI_AUTH_USER, self.password) if self.password else None
             if self.timeout and self.timeout > 0:
                 timeout_config = httpx.Timeout(self.timeout, connect=10.0)
             else:
@@ -101,15 +97,13 @@ class AIClient:
     async def get_messages(self, session_id):
         """Get all messages in a session."""
         client = self._get_client()
-        resp = await client.get(f"/api/session/{session_id}/message")
+        resp = await client.get(f"/api/session/{session_id}/message", params={"limit": "200", "order": "desc"})
         resp.raise_for_status()
         data = resp.json()
         return data.get("data", [])
 
-    async def wait_for_completion(self, session_id, timeout=None, poll_interval=2, prev_ids=None):
+    async def wait_for_completion(self, session_id, timeout=None, poll_interval=2, prev_count=0):
         """Wait for the session to finish processing. Returns the assistant response text."""
-        if prev_ids is None:
-            prev_ids = set()
         if timeout is None:
             timeout = self.timeout
         # 0 means no timeout
@@ -126,8 +120,12 @@ class AIClient:
                 continue
 
             # Messages come in reverse chronological order (newest first)
-            # Find NEW messages (not in prev_ids)
-            new_messages = [m for m in messages if m.get("id") not in prev_ids]
+            # New messages are at the top (first N where N = total - prev_count)
+            new_count = len(messages) - prev_count
+            if new_count > 0 and new_count <= len(messages):
+                new_messages = messages[:new_count]
+            else:
+                new_messages = []
 
             # Check for idle/completion message in new messages
             for msg in new_messages:
@@ -145,8 +143,7 @@ class AIClient:
                                     break
                         if found_text:
                             return found_text
-                        # If no new assistant text yet, keep polling (don't return stale response)
-                        # Fall through to continue the loop
+                        # If no new assistant text yet, keep polling
                     elif outcome == "failed":
                         error = msg.get("error", {})
                         return f"Error: {error.get('message', 'Unknown error')}"
@@ -177,22 +174,20 @@ class AIClient:
             return False
 
     async def full_request(self, session_id, text, timeout=None):
-        """Send a prompt and wait for the complete response."""
+        """Send a prompt and wait for the complete response. Auto-switches model on token limits."""
         # Get current message count before sending
-        # Messages come in reverse chronological order (newest first), so reverse them
         try:
             prev_msgs = await self.get_messages(session_id)
-            prev_ids = {m.get("id") for m in prev_msgs}
+            prev_count = len(prev_msgs)
         except Exception:
-            prev_ids = set()
-        from config import AI_FALLBACK_MODELS
+            prev_count = 0
 
         # Try sending with current model, fallback on token/usage limit
         max_retries = len(AI_FALLBACK_MODELS)
         for attempt in range(max_retries):
             try:
                 await self.send_prompt(session_id, text)
-                result = await self.wait_for_completion(session_id, timeout=timeout, prev_ids=prev_ids)
+                result = await self.wait_for_completion(session_id, timeout=timeout, prev_count=prev_count)
 
                 # Check if result indicates a token/usage limit error
                 if result and ("limit" in result.lower() or "token" in result.lower() or "429" in result or "free usage" in result.lower()):
@@ -208,10 +203,10 @@ class AIClient:
                         next_model = AI_FALLBACK_MODELS[next_model_idx]
                         try:
                             await self.switch_model(session_id, model_id=next_model)
-                            # Reset prev_ids after model switch
+                            # Reset prev_count after model switch
                             try:
                                 prev_msgs = await self.get_messages(session_id)
-                                prev_ids = {m.get("id") for m in prev_msgs}
+                                prev_count = len(prev_msgs)
                             except Exception:
                                 pass
                             continue
