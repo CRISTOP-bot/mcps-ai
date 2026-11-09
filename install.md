@@ -54,6 +54,19 @@ cd agents/<agente>/mcps/system-mcp
 uv sync
 ```
 
+**Browser MCP:**
+```bash
+cd agents/<agente>/mcps/browser-mcp
+uv sync
+uv run playwright install chromium
+```
+
+**Web MCP:**
+```bash
+cd agents/<agente>/mcps/web-mcp
+uv sync
+```
+
 **Minecraft MCP:**
 ```bash
 cd mcps/minecraft-mcp

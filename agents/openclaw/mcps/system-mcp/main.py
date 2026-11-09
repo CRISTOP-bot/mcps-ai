@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-mcp = FastMCP("System - openclaw")
+mcp = FastMCP("System - opencode")
 
 
 def run_cmd(cmd, timeout=10):
@@ -32,7 +32,7 @@ async def sys_info():
         }
         # CPU info
         cpu_info = run_cmd("lscpu 2>/dev/null | grep -E 'Model name|CPU|Architecture' | head -5")
-        info["cpu"] = cpu_info.split("\n") if cpu_info != f"Error: {e}" else ""
+        info["cpu"] = cpu_info.split("\n") if "Error" not in cpu_info else []
         # Memory
         mem = run_cmd("free -h")
         info["memory"] = mem

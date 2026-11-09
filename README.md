@@ -46,7 +46,19 @@ Read, write, and manage files on the local machine.
 - 10 herramientas: read, write, list, search, delete, move, file info, disk usage
 - Seguridad: solo directorios permitidos (home, /tmp)
 
-### 6. System MCP (`agents/<agente>/mcps/system-mcp/`)
+### 6. System MCP
+System info, processes, network, logs.
+- 12 herramientas: sys info, processes, memory, disk, network, ports, kill, env, logs, services, battery
+
+### 7. Web MCP (`agents/<agente>/mcps/web-mcp/`)
+Web search and fetch (Bing scraping, no API key).
+- 4 herramientas: web_search, web_fetch, web_news, web_weather
+
+### 8. Browser MCP (`agents/<agente>/mcps/browser-mcp/`)
+Interactive browser control via Playwright.
+- 17 herramientas: navigate, click, fill, type, screenshot, evaluate, scroll, back/forward, etc.
+
+## Total: 8 MCPs, 80+ herramientas (`agents/<agente>/mcps/system-mcp/`)
 System info, processes, network, logs.
 - 12 herramientas: sys info, processes, memory, disk, network, ports, kill, env, logs, services, battery
 Gestión de Gmail via API.
