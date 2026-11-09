@@ -17,6 +17,8 @@ jobs:
         run: uv sync
       - name: Run tests
         working-directory: agents/opencode/mcps/telegram-mcp
+        env:
+          TELEGRAM_BOT_TOKEN: test-token-for-ci
         run: uv run python -m pytest tests/ -v
 
   test-minecraft:
@@ -67,18 +69,6 @@ jobs:
         working-directory: agents/opencode/mcps/system-mcp
         run: uv run python -c "import main; print('System MCP OK')"
 
-  test-browser-import:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
-      - name: Install dependencies
-        working-directory: agents/opencode/mcps/browser-mcp
-        run: uv sync
-      - name: Verify import
-        working-directory: agents/opencode/mcps/browser-mcp
-        run: uv run python -c "import main; print('Browser MCP OK')"
-
   test-web-import:
     runs-on: ubuntu-latest
     steps:
@@ -90,3 +80,15 @@ jobs:
       - name: Verify import
         working-directory: agents/opencode/mcps/web-mcp
         run: uv run python -c "import main; print('Web MCP OK')"
+
+  test-browser-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: agents/opencode/mcps/browser-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: agents/opencode/mcps/browser-mcp
+        run: uv run python -c "import main; print('Browser MCP OK')"
