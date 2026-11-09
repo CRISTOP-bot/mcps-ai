@@ -1,96 +1,70 @@
-# Claude Desktop / Claude Code Configuration
+# Claude Desktop Configuration
 
-## Claude Desktop (claude_desktop_config.json)
-
-Ubicación: `~/.config/claude/claude_desktop_config.json` (Linux) o `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
+Edita `~/.config/claude/claude_desktop_config.json` y agrega:
 
 ```json
 {
-  "mcpServers": {
+  mcpServers: {
     "telegram": {
       "command": "uv",
-      "args": ["--directory", "/path/to/agents/claude/mcps/telegram-mcp", "run", "main.py"],
-      "env": {
-        "TELEGRAM_BOT_TOKEN": "your_token_here"
-      }
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/telegram-mcp", "run", "main.py"],
+      "env": { "TELEGRAM_BOT_TOKEN": "your_token" }
     },
     "whatsapp": {
       "command": "uv",
-      "args": ["--directory", "/path/to/agents/claude/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
     },
     "minecraft": {
       "command": "uv",
-      "args": ["--directory", "/path/to/agents/claude/mcps/minecraft-mcp", "run", "main.py"],
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/minecraft-mcp", "run", "main.py"],
       "env": {
         "MC_HOST": "localhost",
         "MC_PORT": "25575",
         "MC_RCON_PASSWORD": "your_password"
       }
-    }
-  }
-}
-```
-
-## Claude Code (.mcp.json)
-
-Ubicación: raíz del proyecto o `~/.claude/.mcp.json`
-
-```json
-{
-  "mcpServers": {
-    "telegram": {
+    },
+    "gmail": {
       "command": "uv",
-      "args": ["--directory", "/path/to/agents/claude/mcps/telegram-mcp", "run", "main.py"],
-      "env": { "TELEGRAM_BOT_TOKEN": "your_token" }
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/gmail-mcp", "run", "main.py"],
+      "env": {
+        "GMAIL_CREDENTIALS": "~/.mcps-ai/repo/mcps/gmail-mcp/credentials.json",
+        "GMAIL_TOKEN": "~/.mcps-ai/repo/mcps/gmail-mcp/token.json"
+      }
+    },
+    "filesystem": {
+      "command": "uv",
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/filesystem-mcp", "run", "main.py"]
+    },
+    "system": {
+      "command": "uv",
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/system-mcp", "run", "main.py"]
+    },
+    "web": {
+      "command": "uv",
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/web-mcp", "run", "main.py"]
+    },
+    "browser": {
+      "command": "uv",
+      "args": ["--directory", "~/.mcps-ai/repo/mcps/browser-mcp", "run", "main.py"]
     }
   }
 }
 ```
-PYEOF
-echo "claude config creado"
-## Gmail MCP
 
-```json
-{
-  "gmail": {
-    "command": "uv",
-    "args": ["--directory", "/path/to/agents/claude/mcps/gmail-mcp", "run", "main.py"],
-    "env": {
-      "GMAIL_CREDENTIALS": "/path/to/credentials.json",
-      "GMAIL_TOKEN": "/path/to/token.json"
-    }
-  }
-}
-```
+`~` se expande automáticamente. O usa rutas absolutas.
 
-Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).
+## Telegram Worker (servicio systemd)
 
-## Filesystem MCP
-
-```json
-{
-  "filesystem": {
-    "command": "uv",
-    "args": ["--directory", "/path/to/agents/claude/mcps/filesystem-mcp", "run", "main.py"]
-  }
-}
-```
-
-## System MCP
-
-```json
-{
-  "system": {
-    "command": "uv",
-    "args": ["--directory", "/path/to/agents/claude/mcps/system-mcp", "run", "main.py"]
-  }
-}
+```bash
+systemctl --user enable --now opencode-telegram-worker
 ```
 
 ## macOS
-Usa los plists de launchd incluidos en `telegram-mcp/` (en vez de systemd):
+
+Usa los plists de launchd incluidos en `mcps/telegram-mcp/`:
+
 ```bash
-cp telegram-mcp/*.plist ~/Library/LaunchAgents/
+cp mcps/telegram-mcp/*.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.cristopher.opencode-server.plist
 launchctl load ~/Library/LaunchAgents/com.cristopher.telegram-worker.plist
 ```

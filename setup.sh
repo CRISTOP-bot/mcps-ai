@@ -28,35 +28,35 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 echo "Setting up Telegram MCP..."
-cd agents/${1:-opencode}/mcps/telegram-mcp
+cd mcps/telegram-mcp
 uv sync
 cp -n .env.example .env 2>/dev/null || true
 cd - > /dev/null
 
 echo "Setting up WhatsApp MCP..."
-cd agents/${1:-opencode}/mcps/whatsapp-mcp/whatsapp-mcp-server
+cd mcps/whatsapp-mcp/whatsapp-mcp-server
 uv sync
 cd - > /dev/null
 
 echo "Setting up Minecraft MCP..."
-cd agents/${1:-opencode}/mcps/minecraft-mcp
+cd mcps/minecraft-mcp
 uv sync
 cp -n .env.example .env 2>/dev/null || true
 cd - > /dev/null
 
 echo "Setting up Gmail MCP..."
-cd agents/${1:-opencode}/mcps/gmail-mcp
+cd mcps/gmail-mcp
 uv sync
 cp -n .env.example .env 2>/dev/null || true
 cd - > /dev/null
 
 echo "Setting up Filesystem MCP..."
-cd agents/${1:-opencode}/mcps/filesystem-mcp
+cd mcps/filesystem-mcp
 uv sync
 cd - > /dev/null
 
 echo "Setting up System MCP..."
-cd agents/${1:-opencode}/mcps/system-mcp
+cd mcps/system-mcp
 uv sync
 cd - > /dev/null
 
@@ -64,12 +64,12 @@ echo ""
 echo "=== Setup complete ==="
 echo ""
 echo "Next steps:"
-echo "1. Edit agents/${1:-opencode}/mcps/telegram-mcp/.env with your Telegram bot token"
-echo "2. Edit agents/${1:-opencode}/mcps/minecraft-mcp/.env with your Minecraft RCON password"
-echo "3. Edit agents/${1:-opencode}/mcps/gmail-mcp/.env and download credentials.json"
+echo "1. Edit mcps/telegram-mcp/.env with your Telegram bot token"
+echo "2. Edit mcps/minecraft-mcp/.env with your Minecraft RCON password"
+echo "3. Edit mcps/gmail-mcp/.env and download credentials.json"
 echo "4. Configure your agent (see agents/<agent>/README.md)"
 if [ "$OS" = "Darwin" ]; then
-    echo "5. macOS: Copy plists from agents/${1:-opencode}/mcps/telegram-mcp/*.plist to ~/Library/LaunchAgents/"
+    echo "5. macOS: Copy plists from mcps/telegram-mcp/*.plist to ~/Library/LaunchAgents/"
 else
     echo "5. Linux: systemctl --user enable --now opencode-telegram-worker"
 fi

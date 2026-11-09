@@ -1,208 +1,95 @@
-# MCPs para IA
+# MCPs for AI Agents
 
-> Colección de servidores MCP (Model Context Protocol) universales para agentes de IA.
+[![CI](https://github.com/CRISTOP-bot/mcps-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/CRISTOP-bot/mcps-ai/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![npm](https://img.shields.io/npm/v/mcps-ai)](https://www.npmjs.com/package/mcps-ai)
 
-[![GitHub](https://img.shields.io/badge/GitHub-mcps--ai-blue?logo=github)](https://github.com/CRISTOP-bot/mcps-ai)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+**8 MCP servers, 150+ tools, one install command.** Works with Claude Desktop, Claude Code, Cursor, Kiro, Windsurf, OpenCode, and OpenClaw.
 
-## 📋 Tabla de contenidos
+## What you get
 
-- [MCPs incluidos](#mcps-incluidos)
-- [Compatibilidad](#compatibilidad)
-- [Estructura](#estructura)
-- [Instalación rápida](#instalación-rápida)
-- [Seguridad](#seguridad)
-- [Licencia](#licencia)
+| MCP | Tools | What it does |
+|-----|-------|-------------|
+| **Telegram** | 32 | Agente remoto OpenCode/AI controlable por Telegram. Worker 24/7, texto plano (sin markdown), auto-cambio de modelo, progreso en tiempo real |
+| **WhatsApp** | 12 | Envío/recepción de mensajes vía bridge Go (whatsmeow) |
+| **Minecraft** | 21 | Control de servidor Minecraft vía RCON (dar items, teletransportar, clima, etc.) |
+| **Gmail** | 19 | Leer, enviar, buscar, etiquetar, archivar emails (OAuth2) |
+| **Filesystem** | 14 | Leer, escribir, buscar y gestionar archivos con seguridad (solo dirs permitidos) |
+| **System** | 18 | CPU, RAM, disco, procesos, red, logs, batería, temperatura |
+| **Web** | 4 | Búsqueda en la web (Bing), fetch de páginas, noticias, clima |
+| **Browser** | 17 | Control interactivo de browser vía Playwright |
 
-## 🧩 MCPs incluidos
-
-### 1. Telegram Remote Agent (`agents/<agente>/mcps/telegram-mcp/`)
-Agente remoto de IA controlable via Telegram.
-- Worker persistente con long polling (24/7)
-- Integración con AI Server API
-- SQLite para persistencia de sesiones y tareas
-- Auto-cambio de modelo cuando se acaban los tokens (11 modelos de respaldo)
-- Sin timeout para tareas largas
-- 14 tests automatizados
-
-### 2. WhatsApp MCP (`agents/<agente>/mcps/whatsapp-mcp/`)
-Integración con WhatsApp via bridge (whatsmeow/Go).
-- Envío de mensajes de texto, fotos, videos, audio, documentos
-- Gestión de chats y contactos
-- Descarga de media
-
-### 3. Minecraft MCP (`agents/<agente>/mcps/minecraft-mcp/`)
-Control de servidor Minecraft via RCON.
-- 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
-
-### 4. Gmail MCP (`agents/<agente>/mcps/gmail-mcp/`)
-Gestión de Gmail via API.
-- 13 herramientas: leer, enviar, responder, buscar, etiquetar emails
-- Autenticación OAuth2
-- Soporte para HTML y adjuntos
-
-### 5. Filesystem MCP (`agents/<agente>/mcps/filesystem-mcp/`)
-Read, write, and manage files on the local machine.
-- 10 herramientas: read, write, list, search, delete, move, file info, disk usage
-- Seguridad: solo directorios permitidos (home, /tmp)
-
-### 6. System MCP
-System info, processes, network, logs.
-- 12 herramientas: sys info, processes, memory, disk, network, ports, kill, env, logs, services, battery
-
-### 7. Web MCP (`agents/<agente>/mcps/web-mcp/`)
-Web search and fetch (Bing scraping, no API key).
-- 4 herramientas: web_search, web_fetch, web_news, web_weather
-
-### 8. Browser MCP (`agents/<agente>/mcps/browser-mcp/`)
-Interactive browser control via Playwright.
-- 17 herramientas: navigate, click, fill, type, screenshot, evaluate, scroll, back/forward, etc.
-
-## Total: 8 MCPs, 80+ herramientas (`agents/<agente>/mcps/system-mcp/`)
-System info, processes, network, logs.
-- 12 herramientas: sys info, processes, memory, disk, network, ports, kill, env, logs, services, battery
-Gestión de Gmail via API.
-- 13 herramientas: leer, enviar, responder, buscar, etiquetar emails
-- Autenticación OAuth2
-- Soporte para HTML y adjuntos
-Control de servidor Minecraft via RCON.
-- 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
-- Ejecutar cualquier comando del servidor
-- 4 tests automatizados
-
-## 🔌 Compatibilidad
-
-Cada agente tiene su propia copia de los MCPs en `agents/<agente>/mcps/`:
-
-| Agente | Directorio | Configuración |
-|---|---|---|
-| Claude Desktop | `agents/claude/` | `agents/claude/README.md` |
-| Claude Code | `agents/claude-code/` | `agents/claude-code/README.md` |
-| Cursor | `agents/cursor/` | `agents/cursor/README.md` |
-| Kiro | `agents/kiro/` | `agents/kiro/README.md` |
-| OpenClaw | `agents/openclaw/` | `agents/openclaw/README.md` |
-| OpenCode | `agents/opencode/` | `agents/opencode/README.md` |
-| Windsurf | `agents/windsurf/` | `agents/windsurf/README.md` |
-
-## 📁 Estructura
-
-```
-mcps-ai/
-├── agents/                  # MCPs + config por agente
-│   ├── claude/mcps/         # Copia para Claude Desktop
-│   ├── claude-code/mcps/    # Copia para Claude Code
-│   ├── cursor/mcps/         # Copia para Cursor
-│   ├── kiro/mcps/           # Copia para Kiro
-│   ├── openclaw/mcps/       # Copia para OpenClaw
-│   ├── opencode/mcps/       # Copia para OpenCode
-│   └── windsurf/mcps/       # Copia para Windsurf
-├── cli/                     # CLI npm (npx mcps-ai install)
-├── install.md               # Guía para agentes AI
-├── setup.sh                 # Script de instalación
-└── README.md
-```
-
-## ⚡ Instalación rápida (npm/npx)
+## Install
 
 ```bash
-npx github:CRISTOP-bot/mcps-ai install
-```
-
-O clonar y ejecutar localmente:
-
-```bash
-git clone https://github.com/CRISTOP-bot/mcps-ai.git
-cd mcps-ai/cli
-node bin/mcps-ai.js install
-```
-
-Para publicar en npm (requerido para `npx mcps-ai`):
-
-```bash
-npm login
-npm publish
 npx mcps-ai install
 ```
 
-### Plataformas soportadas
-- **Linux** (Ubuntu, Debian, Fedora, Arch...)
-- **macOS** (10.15+)
-- **Windows** (básico, algunos tools Linux-específicos difieren)
+The installer:
+1. Detects your installed AI agents automatically
+2. Clones this repo to `~/.mcps-ai/repo/`
+3. Installs Python dependencies with `uv`
+4. Prompts you for credentials (Telegram bot token, etc.)
+5. Writes agent configs; **creates `.bak` backups** and **preserves existing working configs**
 
-### Requisitos
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) (gestor de paquetes)
-- Git
-
-### macOS — Instalación con launchd (en vez de systemd)
+## Usage
 
 ```bash
-# 1. Instalar dependencias
-bash setup.sh
-
-# 2. Copiar plists
-cp agents/opencode/mcps/telegram-mcp/com.cristopher.opencode-server.plist ~/Library/LaunchAgents/
-cp agents/opencode/mcps/telegram-mcp/com.cristopher.telegram-worker.plist ~/Library/LaunchAgents/
-
-# 3. Editar los plists: reemplazar USERNAME y OPENCODE_SERVER_PASSWORD
-
-# 4. Cargar servicios
-launchctl load ~/Library/LaunchAgents/com.cristopher.opencode-server.plist
-launchctl load ~/Library/LaunchAgents/com.cristopher.telegram-worker.plist
-
-# 5. Verificar
-launchctl list | grep cristopher
+mcps-ai install [agents...]   # Install for specific agents
+mcps-ai login                 # Authenticate with GitHub (gh CLI)
+mcps-ai backup                # Backup credentials to private Gist
+mcps-ai restore               # Restore credentials on another machine
+mcps-ai status                # Show detected agents
+mcps-ai doctor                # Diagnose installation
+mcps-ai update                # Update (keeps your .env files)
 ```
 
-### macOS — Equivalencias de comandos
-| Linux | macOS |
-|-------|-------|
-| `systemctl --user start opencode-server` | `launchctl load ~/Library/LaunchAgents/*.plist` |
-| `journalctl --user -u opencode-telegram-worker -f` | `tail -f /tmp/telegram-worker.log` |
-| `free -h` | `vm_stat` |
-| `lscpu` | `sysctl -n machdep.cpu.brand_string` |
+## Structure
 
-### 1. Clonar
-
-```bash
-git clone https://github.com/CRISTOP-bot/mcps-ai.git
-cd mcps-ai
+```
+mcps-ai/
+├── mcps/                    # Canonical MCP servers (single source of truth)
+│   ├── telegram-mcp/
+│   ├── whatsapp-mcp/
+│   ├── minecraft-mcp/
+│   ├── gmail-mcp/
+│   ├── filesystem-mcp/
+│   ├── system-mcp/
+│   ├── web-mcp/
+│   └── browser-mcp/
+├── agents/                  # Per-agent config instructions
+│   ├── claude/
+│   ├── claude-code/
+│   ├── cursor/
+│   ├── kiro/
+│   ├── opencode/
+│   ├── openclaw/
+│   └── windsurf/
+├── cli/                     # mcps-ai CLI (published to npm)
+├── install.md               # Detailed setup for AI agents
+└── package.json
 ```
 
-### 2. Elegir tu agente
+## Requirements
 
-Cada agente tiene sus MCPs en `agents/<agente>/mcps/`. Consulta `agents/<agente>/README.md` para configuración específica.
+- **Node.js** 16+
+- **Python** 3.10+
+- **uv** (installer will install it if missing)
+- **Git**
 
-### 3. Instalar dependencias
+## Platforms
 
-```bash
-# Telegram
-cd agents/<agente>/mcps/telegram-mcp && uv sync && cp .env.example .env
+- **Linux** — full support (systemd services)
+- **macOS** — full support (launchd plists included)
+- **Windows** — partial (Linux-specific commands differ)
 
-# WhatsApp
-cd agents/<agente>/mcps/whatsapp-mcp/whatsapp-mcp-server && uv sync
+## Security
 
-# Minecraft
-cd agents/<agente>/mcps/minecraft-mcp && uv sync && cp .env.example .env
+- Credentials live only in local `.env` files (gitignored)
+- No tokens committed to the repo
+- `mcps-ai backup` uses **private Gists** only
+- `.bak` files are created before any config is modified
 
-# Gmail
-cd agents/<agente>/mcps/gmail-mcp && uv sync && cp .env.example .env
-# Descargar credentials.json de Google Cloud Console
-# Ejecutar: python gmail_auth.py
-```
+## License
 
-### 4. Editar .env con tus valores
-
-## 🔒 Seguridad
-
-- **Nunca** incluir credenciales reales en el repositorio
-- Usar archivos `.env` (gitignored) para secretos
-- Configurar usuarios autorizados en Telegram
-
-## 🤖 Para agentes AI
-
-Si eres un agente de IA, lee `install.md` para instrucciones detalladas de instalación y configuración.
-
-## 📄 Licencia
-
-MIT — Libre para usar, modificar y distribuir.
+MIT

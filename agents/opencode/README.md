@@ -1,8 +1,6 @@
 # OpenCode Configuration
 
-## opencode.json
-
-Ubicación: `~/.config/opencode/opencode.json`
+Edita `~/.config/opencode/opencode.json` y agrega:
 
 ```json
 {
@@ -10,83 +8,65 @@ Ubicación: `~/.config/opencode/opencode.json`
     "servers": {
       "telegram": {
         "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/agents/opencode/mcps/telegram-mcp", "run", "main.py"],
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/telegram-mcp", "run", "main.py"],
         "environment": { "TELEGRAM_BOT_TOKEN": "your_token" }
       },
       "whatsapp": {
         "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/agents/opencode/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"]
       },
       "minecraft": {
         "type": "local",
-        "command": ["/path/to/uv", "--directory", "/path/to/agents/opencode/mcps/minecraft-mcp", "run", "main.py"],
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/minecraft-mcp", "run", "main.py"],
         "environment": {
           "MC_HOST": "localhost",
           "MC_PORT": "25575",
           "MC_RCON_PASSWORD": "your_password"
         }
+      },
+      "gmail": {
+        "type": "local",
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/gmail-mcp", "run", "main.py"],
+        "environment": {
+          "GMAIL_CREDENTIALS": "~/.mcps-ai/repo/mcps/gmail-mcp/credentials.json",
+          "GMAIL_TOKEN": "~/.mcps-ai/repo/mcps/gmail-mcp/token.json"
+        }
+      },
+      "filesystem": {
+        "type": "local",
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/filesystem-mcp", "run", "main.py"]
+      },
+      "system": {
+        "type": "local",
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/system-mcp", "run", "main.py"]
+      },
+      "web": {
+        "type": "local",
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/web-mcp", "run", "main.py"]
+      },
+      "browser": {
+        "type": "local",
+        "command": ["uv", "--directory", "~/.mcps-ai/repo/mcps/browser-mcp", "run", "main.py"]
       }
     }
   }
 }
 ```
 
-## OpenCode Server (para Telegram Remote Agent)
-
-```bash
-opencode serve --port 4096 --hostname 127.0.0.1
-```
+`~` se expande automáticamente. O usa la ruta completa.
 
 ## Telegram Worker (servicio systemd)
 
 ```bash
 systemctl --user enable --now opencode-telegram-worker
 ```
-PYEOF
-echo "opencode config creado"
-## Gmail MCP
-
-```json
-{
-  "gmail": {
-    "command": "uv",
-    "args": ["--directory", "/path/to/agents/opencode/mcps/gmail-mcp", "run", "main.py"],
-    "env": {
-      "GMAIL_CREDENTIALS": "/path/to/credentials.json",
-      "GMAIL_TOKEN": "/path/to/token.json"
-    }
-  }
-}
-```
-
-Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).
-
-## Filesystem MCP
-
-```json
-{
-  "filesystem": {
-    "command": "uv",
-    "args": ["--directory", "/path/to/agents/opencode/mcps/filesystem-mcp", "run", "main.py"]
-  }
-}
-```
-
-## System MCP
-
-```json
-{
-  "system": {
-    "command": "uv",
-    "args": ["--directory", "/path/to/agents/opencode/mcps/system-mcp", "run", "main.py"]
-  }
-}
-```
 
 ## macOS
-Usa los plists de launchd incluidos en `telegram-mcp/` (en vez de systemd):
+
+Usa los plists de launchd incluidos en `mcps/telegram-mcp/`:
+
 ```bash
-cp telegram-mcp/*.plist ~/Library/LaunchAgents/
+cp mcps/telegram-mcp/*.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.cristopher.opencode-server.plist
 launchctl load ~/Library/LaunchAgents/com.cristopher.telegram-worker.plist
 ```

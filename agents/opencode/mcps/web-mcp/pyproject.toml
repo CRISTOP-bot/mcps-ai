@@ -1,8 +1,0 @@
-[project]
-name = "web-mcp"
-version = "0.1.0"
-requires-python = ">=3.10"
-dependencies = [
-    "fastmcp>=2.0.0",
-    "python-dotenv>=1.0.0",
-]

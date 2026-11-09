@@ -44,26 +44,26 @@ uv sync
 
 **Filesystem MCP:**
 ```bash
-cd agents/<agente>/mcps/filesystem-mcp
+cd mcps/filesystem-mcp
 uv sync
 ```
 
 **System MCP:**
 ```bash
-cd agents/<agente>/mcps/system-mcp
+cd mcps/system-mcp
 uv sync
 ```
 
 **Browser MCP:**
 ```bash
-cd agents/<agente>/mcps/browser-mcp
+cd mcps/browser-mcp
 uv sync
 uv run playwright install chromium
 ```
 
 **Web MCP:**
 ```bash
-cd agents/<agente>/mcps/web-mcp
+cd mcps/web-mcp
 uv sync
 ```
 
@@ -78,8 +78,8 @@ cp .env.example .env
 ### Paso 3.5 (solo macOS): Instalar servicios con launchd
 
 ```bash
-cp agents/<agente>/mcps/telegram-mcp/com.cristopher.opencode-server.plist ~/Library/LaunchAgents/
-cp agents/<agente>/mcps/telegram-mcp/com.cristopher.telegram-worker.plist ~/Library/LaunchAgents/
+cp mcps/telegram-mcp/com.cristopher.opencode-server.plist ~/Library/LaunchAgents/
+cp mcps/telegram-mcp/com.cristopher.telegram-worker.plist ~/Library/LaunchAgents/
 # Edita USERNAME y OPENCODE_SERVER_PASSWORD en ambos plists
 launchctl load ~/Library/LaunchAgents/com.cristopher.opencode-server.plist
 launchctl load ~/Library/LaunchAgents/com.cristopher.telegram-worker.plist

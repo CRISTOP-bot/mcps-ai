@@ -103,8 +103,8 @@ function ensureRepo(sourcePath) {
 }
 
 function getMcpConfigs(agentId, repoDir) {
-  // Returns MCP server config entries pointing at the agent's mcps directory
-  const base = path.join(repoDir, 'agents', agentId, 'mcps');
+  // Returns MCP server config entries pointing at the canonical mcps/ directory
+  const base = path.join(repoDir, 'mcps');
   const config = {};
 
   if (fileExists(path.join(base, 'telegram-mcp', 'main.py'))) {
