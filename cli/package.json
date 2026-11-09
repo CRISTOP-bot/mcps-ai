@@ -1,0 +1,39 @@
+{
+  "name": "mcps-ai",
+  "version": "1.0.0",
+  "description": "CLI installer & updater for MCPs-AI \u2014 installs MCP servers for Claude, OpenCode, Kiro, Cursor, Windsurf, OpenClaw and more",
+  "bin": {
+    "mcps-ai": "bin/mcps-ai.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "start": "node bin/mcps-ai.js"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "opencode",
+    "claude",
+    "ai",
+    "telegram",
+    "minecraft",
+    "gmail"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CRISTOP-bot/mcps-ai.git"
+  },
+  "bugs": "https://github.com/CRISTOP-bot/mcps-ai/issues",
+  "homepage": "https://github.com/CRISTOP-bot/mcps-ai#readme",
+  "author": "CRISTOP-bot",
+  "publishConfig": {
+    "access": "public"
+  }
+}

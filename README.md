@@ -96,12 +96,25 @@ mcps-ai/
 │   ├── openclaw/mcps/       # Copia para OpenClaw
 │   ├── opencode/mcps/       # Copia para OpenCode
 │   └── windsurf/mcps/       # Copia para Windsurf
+├── cli/                     # CLI npm (npx mcps-ai install)
 ├── install.md               # Guía para agentes AI
 ├── setup.sh                 # Script de instalación
 └── README.md
 ```
 
-## ⚡ Instalación rápida
+## ⚡ Instalación rápida (npm)
+
+```bash
+npx mcps-ai install
+```
+
+O con la CLI local:
+
+```bash
+git clone https://github.com/CRISTOP-bot/mcps-ai.git
+cd mcps-ai/cli
+node bin/mcps-ai.js install
+```
 
 ### Plataformas soportadas
 - **Linux** (Ubuntu, Debian, Fedora, Arch...)
