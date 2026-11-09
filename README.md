@@ -34,6 +34,14 @@ Integración con WhatsApp via bridge (whatsmeow/Go).
 ### 3. Minecraft MCP (`agents/<agente>/mcps/minecraft-mcp/`)
 Control de servidor Minecraft via RCON.
 - 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
+
+### 4. Gmail MCP (`agents/<agente>/mcps/gmail-mcp/`)
+Gestión de Gmail via API.
+- 13 herramientas: leer, enviar, responder, buscar, etiquetar emails
+- Autenticación OAuth2
+- Soporte para HTML y adjuntos
+Control de servidor Minecraft via RCON.
+- 13 herramientas: dar items, teletransportar, clima, tiempo, gamemode, etc.
 - Ejecutar cualquier comando del servidor
 - 4 tests automatizados
 
@@ -97,6 +105,11 @@ cd agents/<agente>/mcps/whatsapp-mcp/whatsapp-mcp-server && uv sync
 
 # Minecraft
 cd agents/<agente>/mcps/minecraft-mcp && uv sync && cp .env.example .env
+
+# Gmail
+cd agents/<agente>/mcps/gmail-mcp && uv sync && cp .env.example .env
+# Descargar credentials.json de Google Cloud Console
+# Ejecutar: python gmail_auth.py
 ```
 
 ### 4. Editar .env con tus valores

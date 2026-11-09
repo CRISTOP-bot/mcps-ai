@@ -30,3 +30,15 @@ jobs:
       - name: Run tests
         working-directory: agents/opencode/mcps/minecraft-mcp
         run: uv run python -m pytest tests/ -v
+
+  test-gmail-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: agents/opencode/mcps/gmail-mcp
+        run: uv sync
+      - name: Verify import
+        working-directory: agents/opencode/mcps/gmail-mcp
+        run: uv run python -c "import main; print('Gmail MCP OK')"

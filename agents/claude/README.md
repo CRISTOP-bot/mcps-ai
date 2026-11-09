@@ -48,3 +48,19 @@ Ubicación: raíz del proyecto o `~/.claude/.mcp.json`
 ```
 PYEOF
 echo "claude config creado"
+## Gmail MCP
+
+```json
+{
+  "gmail": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/claude/mcps/gmail-mcp", "run", "main.py"],
+    "env": {
+      "GMAIL_CREDENTIALS": "/path/to/credentials.json",
+      "GMAIL_TOKEN": "/path/to/token.json"
+    }
+  }
+}
+```
+
+Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).

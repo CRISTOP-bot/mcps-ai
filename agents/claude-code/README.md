@@ -40,3 +40,20 @@ claude mcp add minecraft -- uv --directory /path/to/agents/claude-code/mcps/mine
 ```bash
 claude mcp list
 ```
+
+## Gmail MCP
+
+```json
+{
+  "gmail": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/claude-code/mcps/gmail-mcp", "run", "main.py"],
+    "env": {
+      "GMAIL_CREDENTIALS": "/path/to/credentials.json",
+      "GMAIL_TOKEN": "/path/to/token.json"
+    }
+  }
+}
+```
+
+Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).

@@ -36,3 +36,19 @@ Ubicación: `~/.kiro/settings/mcp.json` o `.kiro/settings/mcp.json` en el proyec
 - Los MCPs son compatibles con cualquier cliente MCP estándar
 PYEOF
 echo "kiro config creado"
+## Gmail MCP
+
+```json
+{
+  "gmail": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/kiro/mcps/gmail-mcp", "run", "main.py"],
+    "env": {
+      "GMAIL_CREDENTIALS": "/path/to/credentials.json",
+      "GMAIL_TOKEN": "/path/to/token.json"
+    }
+  }
+}
+```
+
+Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).

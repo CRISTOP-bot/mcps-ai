@@ -45,3 +45,20 @@ openclaw mcp status --verbose
 - OpenClaw soporta stdio, SSE y Streamable HTTP
 - Los MCPs de este repo usan stdio (command-based)
 - OpenClaw puede ejecutar MCPs en nodos remotos (node-hosted)
+
+## Gmail MCP
+
+```json
+{
+  "gmail": {
+    "command": "uv",
+    "args": ["--directory", "/path/to/agents/openclaw/mcps/gmail-mcp", "run", "main.py"],
+    "env": {
+      "GMAIL_CREDENTIALS": "/path/to/credentials.json",
+      "GMAIL_TOKEN": "/path/to/token.json"
+    }
+  }
+}
+```
+
+Requiere autenticacion OAuth2 (ver gmail-mcp/README.md).
