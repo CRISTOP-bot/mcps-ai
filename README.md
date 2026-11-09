@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/mcps-ai)](https://www.npmjs.com/package/mcps-ai)
 
-**14 MCP servers, 220+ tools, one install command.** Works with Claude Desktop, Claude Code, Cursor, Kiro, Windsurf, OpenCode, and OpenClaw.
+**15 MCP servers, 230+ tools, one install command.** Works with Claude Desktop, Claude Code, Cursor, Kiro, Windsurf, OpenCode, and OpenClaw.
 
 🌐 **Website:** https://cristop-bot.github.io/mcps-ai/ · 📖 **Wiki:** https://github.com/CRISTOP-bot/mcps-ai/wiki
 
@@ -26,6 +26,7 @@
 | **Slack** | 11 | Mensajes, DMs, canales, historial, usuarios, reacciones, pins (bot token) |
 | **Notion** | 11 | Búsqueda, páginas, bases de datos, bloques, usuarios (internal integration) |
 | **Home Assistant** | 11 | Estados, servicios, dominios, historial y eventos del hogar (long-lived token) |
+| **Orchestrator** | 12 | Coordinador multi-agente: Director + workers en paralelo, blackboard compartida, transcript |
 
 ## Install
 
@@ -74,7 +75,7 @@ mcps-ai/
 │   ├── openclaw/
 │   └── windsurf/
 ├── cli/                     # mcps-ai CLI (published to npm)
-├── skills/                  # 109 SKILL.md para agentes AI (instalación, uso, debugging, etc.)
+├── skills/                  # 112 SKILL.md para agentes AI (instalación, uso, debugging, etc.)
 ├── install.md               # Detailed setup for AI agents
 └── package.json
 ```

@@ -209,6 +209,16 @@ function getMcpConfigs(agentId, repoDir) {
       env: process.env.NOTION_API_KEY ? { NOTION_API_KEY: process.env.NOTION_API_KEY } : {},
     };
   }
+  if (fileExists(path.join(base, 'orchestrator-mcp', 'main.py'))) {
+    const env = {};
+    if (process.env.AI_PASSWORD) env.AI_PASSWORD = process.env.AI_PASSWORD;
+    if (process.env.AI_BASE_URL) env.AI_BASE_URL = process.env.AI_BASE_URL;
+    config.orchestrator = {
+      type: 'local',
+      command: [path.join(os.homedir(), '.local/bin/uv'), '--directory', path.join(base, 'orchestrator-mcp'), 'run', 'main.py'],
+      env,
+    };
+  }
   if (fileExists(path.join(base, 'homeassistant-mcp', 'main.py'))) {
     const env = {};
     if (process.env.HA_URL) env.HA_URL = process.env.HA_URL;
@@ -392,6 +402,24 @@ async function promptCredentials(repoDir, agentId, env) {
         `HA_URL=${url || process.env.HA_URL || 'http://homeassistant.local:8123'}`,
         `HA_TOKEN=${token || process.env.HA_TOKEN || ''}`,
       ]);
+    }
+  }
+
+  // Orchestrator (OpenCode Server)
+  if (fileExists(path.join(base, 'orchestrator-mcp'))) {
+    const url = await ask('AI_BASE_URL [http://127.0.0.1:4096]: ');
+    const pass = await ask('AI_PASSWORD (OpenCode Server password, Enter = saltar): ');
+    const lines = [];
+    if (url) lines.push(`AI_BASE_URL=${url}`);
+    if (pass) lines.push(`AI_PASSWORD=${pass}`);
+    if (lines.length) {
+      lines.push('AI_AUTH_USER=' + (process.env.AI_AUTH_USER || 'opencode'));
+      lines.push('AI_DIRECTORY=' + os.homedir());
+      lines.push('AI_MODEL_ID=' + (process.env.AI_MODEL_ID || 'deepseek-v4.1-flash-free'));
+      lines.push('AI_MODEL_PROVIDER=' + (process.env.AI_MODEL_PROVIDER || 'opencode'));
+      lines.push('REQUEST_TIMEOUT=0');
+      lines.push('DATABASE_PATH=./data/orchestra.db');
+      await writeEnv(base, 'orchestrator-mcp', lines);
     }
   }
 
