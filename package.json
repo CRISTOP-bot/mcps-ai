@@ -36,7 +36,8 @@
   "scripts": {
     "start": "node cli/bin/mcps-ai.js",
     "status": "node cli/bin/mcps-ai.js status",
-    "doctor": "node cli/bin/mcps-ai.js doctor"
+    "doctor": "node cli/bin/mcps-ai.js doctor",
+    "test": "node --test cli/tests/cli.test.js"
   },
   "license": "MIT",
   "engines": {

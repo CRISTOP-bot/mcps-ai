@@ -176,3 +176,39 @@ jobs:
       - name: Verify import
         working-directory: mcps/orchestrator-mcp
         run: uv run python -c "import main; print('Orchestrator MCP OK')"
+
+  cli-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run CLI tests
+        run: npm test
+
+  filesystem-security-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/filesystem-mcp
+        run: uv sync
+      - name: Run path-authorization security tests
+        working-directory: mcps/filesystem-mcp
+        run: uv run python -m pytest tests/ -v
+
+  orchestrator-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        working-directory: mcps/orchestrator-mcp
+        run: uv sync
+      - name: Run orchestrator tests
+        working-directory: mcps/orchestrator-mcp
+        env:
+          AI_PASSWORD: test-only-password
+        run: uv run python -m pytest tests/ -v

@@ -18,6 +18,18 @@ function fileExists(p) {
   try { return fs.statSync(p).isFile(); } catch { return false; }
 }
 
+function commandExistsSimple(cmd) {
+  try { execSync(`which ${cmd} 2>/dev/null`, { stdio: 'pipe' }); return true; } catch { return false; }
+}
+
+function resolveUv() {
+  const candidates = [path.join(os.homedir(), '.local/bin/uv'), 'uv'];
+  for (const c of candidates) {
+    if (c.startsWith('/') ? fileExists(c) : commandExistsSimple(c)) return c;
+  }
+  return null;
+}
+
 function tcpProbe(host, port, ms = 800) {
   return new Promise(resolve => {
     try {
@@ -160,32 +172,25 @@ function backupConfig(p) {
   if (fileExists(p)) {
     const backup = p + '.bak.' + Date.now();
     fs.copyFileSync(p, backup);
+    try { fs.chmodSync(backup, 0o600); } catch {}
     return backup;
   }
   return null;
 }
 
-// Merge: keep existing working server configs; only fill in missing ones,
-// and preserve user-set env vars (never overwrite with empty values).
-function mergeServers(existing, incoming) {
-  const merged = { ...(existing || {}) };
-  for (const [name, cfg] of Object.entries(incoming || {})) {
-    if (merged[name]) {
-      // Keep existing command if its directory exists, otherwise take incoming
-      const dirIdx = merged[name].command ? merged[name].command.indexOf('--directory') : -1;
-      const dir = dirIdx >= 0 ? merged[name].command[dirIdx + 1] : null;
-      const dirOk = dir && dirExists(dir);
-      merged[name] = {
-        ...merged[name],
-        ...(dirOk ? {} : { command: cfg.command }),
-        // Preserve existing environment entries that are non-empty
-        environment: { ...(cfg.environment || {}), ...(merged[name].environment || {}) },
-      };
-    } else {
-      merged[name] = cfg;
+// Best-effort sweep: every MCP .env in the repo gets owner-only permissions.
+function secureEnvFiles(repoDir) {
+  try {
+    const base = path.join(repoDir, 'mcps');
+    if (!dirExists(base)) return;
+    for (const d of fs.readdirSync(base, { withFileTypes: true })) {
+      if (!d.isDirectory()) continue;
+      const env = path.join(base, d.name, '.env');
+      if (fileExists(env)) {
+        try { fs.chmodSync(env, 0o600); } catch {}
+      }
     }
-  }
-  return merged;
+  } catch {}
 }
 
 function dirExists(p) {
@@ -236,7 +241,13 @@ function ensureRepo(sourcePath) {
   // Clone fresh
   fs.mkdirSync(INSTALL_DIR, { recursive: true });
   console.log('Cloning mcps-ai...');
-  run(`git clone ${REPO_URL} ${REPO_DIR}`);
+  try {
+    run(`git clone --depth 1 ${REPO_URL} ${REPO_DIR}`);
+  } catch (e) {
+    console.error(`ERROR: no se pudo clonar ${REPO_URL}`);
+    console.error('Revisa tu conexión o apunta a un clon local: mcps-ai install --source /ruta/a/mcps-ai');
+    process.exit(1);
+  }
   return REPO_DIR;
 }
 
@@ -421,7 +432,7 @@ async function promptCredentials(repoDir, agentId, env) {
   console.log('Presiona Enter para saltar (usa valores por defecto)\n');
 
   // Telegram
-  if (fileExists(path.join(base, 'telegram-mcp'))) {
+  if (dirExists(path.join(base, 'telegram-mcp'))) {
     const token = await ask('TELEGRAM_BOT_TOKEN (de @BotFather): ');
     if (token) {
       const chatIds = await ask('TELEGRAM_ALLOWED_USERS (IDs separados por coma, ej: 123456789): ');
@@ -454,7 +465,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Minecraft
-  if (fileExists(path.join(base, 'minecraft-mcp'))) {
+  if (dirExists(path.join(base, 'minecraft-mcp'))) {
     const host = await ask('MC_HOST [localhost]: ');
     const port = await ask('MC_PORT [25575]: ');
     const password = await ask('MC_RCON_PASSWORD (vacío = saltar): ');
@@ -482,7 +493,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // GitHub
-  if (fileExists(path.join(base, 'github-mcp'))) {
+  if (dirExists(path.join(base, 'github-mcp'))) {
     const token = await ask('GITHUB_TOKEN (Enter = intentar `gh auth token` en tiempo de ejecución, o saltar): ');
     if (token) {
       await writeEnv(base, 'github-mcp', [`GITHUB_TOKEN=${token}`]);
@@ -490,7 +501,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Discord
-  if (fileExists(path.join(base, 'discord-mcp'))) {
+  if (dirExists(path.join(base, 'discord-mcp'))) {
     const botToken = await ask('DISCORD_BOT_TOKEN (Enter = saltar): ');
     const webhook = await ask('DISCORD_WEBHOOK_URL (opcional, Enter = saltar): ');
     if (botToken || webhook) {
@@ -502,7 +513,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Spotify
-  if (fileExists(path.join(base, 'spotify-mcp'))) {
+  if (dirExists(path.join(base, 'spotify-mcp'))) {
     const cid = await ask('SPOTIFY_CLIENT_ID (Enter = saltar): ');
     if (cid) {
       const secret = await ask('SPOTIFY_CLIENT_SECRET: ');
@@ -516,7 +527,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Slack
-  if (fileExists(path.join(base, 'slack-mcp'))) {
+  if (dirExists(path.join(base, 'slack-mcp'))) {
     const token = await ask('SLACK_BOT_TOKEN (xoxb-..., Enter = saltar): ');
     if (token) {
       await writeEnv(base, 'slack-mcp', [`SLACK_BOT_TOKEN=${token}`]);
@@ -524,7 +535,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Notion
-  if (fileExists(path.join(base, 'notion-mcp'))) {
+  if (dirExists(path.join(base, 'notion-mcp'))) {
     const key = await ask('NOTION_API_KEY (ntn_/secret_..., Enter = saltar): ');
     if (key) {
       await writeEnv(base, 'notion-mcp', [`NOTION_API_KEY=${key}`]);
@@ -532,7 +543,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Home Assistant
-  if (fileExists(path.join(base, 'homeassistant-mcp'))) {
+  if (dirExists(path.join(base, 'homeassistant-mcp'))) {
     const url = await ask('HA_URL [http://homeassistant.local:8123]: ');
     if (url || process.env.HA_URL) {
       const token = await ask('HA_TOKEN (long-lived access token, Enter = saltar): ');
@@ -544,7 +555,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Orchestrator (OpenCode Server)
-  if (fileExists(path.join(base, 'orchestrator-mcp'))) {
+  if (dirExists(path.join(base, 'orchestrator-mcp'))) {
     const url = await ask('AI_BASE_URL [http://127.0.0.1:4096]: ');
     const pass = await ask('AI_PASSWORD (OpenCode Server password, Enter = saltar): ');
     const lines = [];
@@ -562,7 +573,7 @@ async function promptCredentials(repoDir, agentId, env) {
   }
 
   // Gmail — just point to where user should put credentials
-  if (fileExists(path.join(base, 'gmail-mcp'))) {
+  if (dirExists(path.join(base, 'gmail-mcp'))) {
     console.log('\nGmail: coloca credentials.json y token.json en:', path.join(base, 'gmail-mcp'));
     console.log('Ejecuta: python gmail_auth.py para autenticar');
   }
@@ -591,6 +602,17 @@ async function installCommand(args) {
   agents.forEach(a => console.log(`  - ${a.name} (${a.id})`));
   console.log('');
 
+  // Preflight checks — fail fast with a clear message
+  if (!commandExistsSimple('git')) {
+    console.error('ERROR: git no está instalado. Instálalo primero: https://git-scm.com/');
+    process.exit(1);
+  }
+  if (!resolveUv()) {
+    console.error('ERROR: uv no encontrado (ni en ~/.local/bin/uv ni en PATH).');
+    console.error('Instálalo con: curl -LsSf https://astral.sh/uv/install.sh | sh');
+    process.exit(1);
+  }
+
   // Install dependencies once (shared repo copy)
   console.log('Instalando dependencias Python...');
   for (const agent of agents) {
@@ -610,6 +632,8 @@ async function installCommand(args) {
     agent.writeConfig(mcpConfig);
     console.log(`  ✓ ${agent.name} configurado en ${agent.configPath()}`);
   }
+
+  secureEnvFiles(repoDir);
 
   console.log('\n✅ Instalación completa!');
   console.log('Reinicia tu agente de IA para cargar los MCPs.');
@@ -631,6 +655,7 @@ async function updateCommand() {
     agent.writeConfig(mcpConfig);
     console.log(`  ✓ ${agent.name} actualizado`);
   }
+  secureEnvFiles(repoDir);
   console.log('\n✅ Actualización completa. Tus credenciales y .env se conservaron.');
 }
 
@@ -674,4 +699,4 @@ function doctorCommand() {
   console.log(`  ${dirExists(REPO_DIR) ? '✓' : '✗'} repo: ${dirExists(REPO_DIR) ? REPO_DIR : 'no clonado'}`);
 }
 
-module.exports = { installCommand, updateCommand, statusCommand, doctorCommand, INSTALL_DIR, REPO_DIR };
+module.exports = { installCommand, updateCommand, statusCommand, doctorCommand, INSTALL_DIR, REPO_DIR, _test: { dirExists, fileExists } };

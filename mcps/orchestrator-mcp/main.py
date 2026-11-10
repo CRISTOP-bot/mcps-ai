@@ -24,6 +24,8 @@ logger = logging.getLogger("orchestrator-mcp")
 mcp = FastMCP("Orchestrator - opencode")
 client = AIClient()
 
+MAX_WORKERS = 6  # hard cap on parallel workers per director run
+
 ROLE_PROMPTS = {
     "researcher": "You are the Researcher on an AI team. Find the key facts, options and prior art for the goal. Be concise and cite uncertainty explicitly.",
     "analyst": "You are the Analyst on an AI team. Break the goal into structure: assumptions, risks, dependencies, decision points.",
@@ -50,6 +52,7 @@ def _worker_prompt(role, goal):
 
 async def _worker(role, goal, run_id, timeout):
     started = time.time()
+    session_id = None
     try:
         session = await client.create_session(title=f"orchestra-{role}-{run_id[:6]}")
         session_id = session.get("id") or session.get("sessionID") or session.get("session_id")
@@ -60,7 +63,7 @@ async def _worker(role, goal, run_id, timeout):
     except Exception as e:
         err = f"worker error: {e}"
         store.log_message(run_id, f"worker-{role}", role, err)
-        return role, {"reply": err, "session_id": None, "elapsed": round(time.time() - started, 1)}
+        return role, {"reply": err, "session_id": session_id, "elapsed": round(time.time() - started, 1)}
 
 
 @mcp.tool
@@ -168,6 +171,9 @@ async def orchestra_director_run(goal: str, roles: str = "researcher,coder,revie
     role_list = _parse_roles(roles)
     if not role_list:
         return {"error": "no roles parsed from 'roles' argument"}
+    if len(role_list) > MAX_WORKERS:
+        logger.warning("roles clamped from %d to %d", len(role_list), MAX_WORKERS)
+        role_list = role_list[:MAX_WORKERS]
     if timeout == 0:
         timeout = None
 
@@ -175,34 +181,51 @@ async def orchestra_director_run(goal: str, roles: str = "researcher,coder,revie
     store.log_message(run_id, "director", "director", f"Goal received: {goal}")
     logger.info("director_run %s: goal=%s roles=%s", run_id, goal[:80], role_list)
 
-    # Phase 1: fan-out workers in parallel
-    results = await asyncio.gather(*(_worker(r, goal, run_id, timeout) for r in role_list))
-    workers = {role: data for role, data in results}
-
-    worker_block = "\n\n".join(
-        f"--- {role.upper()} (elapsed {data['elapsed']}s) ---\n{data['reply']}"
-        for role, data in workers.items()
-    )
-
-    # Phase 2: director synthesizes
-    director_prompt = (
-        "You are the Director of an AI team. Your job is to synthesize the workers' output into ONE final, actionable answer.\n\n"
-        f"GOAL: {goal}\n\n"
-        f"WORKER OUTPUTS:\n{worker_block}\n\n"
-        "Produce the final answer for the user: concrete, ordered, no meta-commentary. "
-        "If workers disagree, state the strongest option and why. Plain text, no markdown."
-    )
+    temp_sessions = []
     try:
-        director_session = await client.create_session(title=f"orchestra-director-{run_id[:6]}")
-        director_sid = director_session.get("id") or director_session.get("sessionID") or director_session.get("session_id")
-        await client.switch_model(director_sid)
-        synthesis = await client.full_request(director_sid, director_prompt, timeout=timeout)
-    except Exception as e:
-        synthesis = f"director error: {e}"
+        # Phase 1: fan-out workers in parallel
+        results = await asyncio.gather(*(_worker(r, goal, run_id, timeout) for r in role_list))
+        workers = {role: data for role, data in results}
+        temp_sessions.extend(w.get("session_id") for w in workers.values() if w.get("session_id"))
 
-    store.log_message(run_id, "director", "director", synthesis)
-    store.finish_run(run_id, {r: w for r, w in workers.items()}, "done", synthesis)
-    store.blackboard_write(f"run:{run_id}", json.dumps({"goal": goal, "workers": workers, "synthesis": synthesis}, ensure_ascii=False))
+        worker_block = "\n\n".join(
+            f"--- {role.upper()} (elapsed {data['elapsed']}s) ---\n{data['reply']}"
+            for role, data in workers.items()
+        )
+
+        # Phase 2: director synthesizes
+        director_prompt = (
+            "You are the Director of an AI team. Your job is to synthesize the workers' output into ONE final, actionable answer.\n\n"
+            f"GOAL: {goal}\n\n"
+            f"WORKER OUTPUTS:\n{worker_block}\n\n"
+            "Produce the final answer for the user: concrete, ordered, no meta-commentary. "
+            "If workers disagree, state the strongest option and why. Plain text, no markdown."
+        )
+        director_sid = None
+        try:
+            director_session = await client.create_session(title=f"orchestra-director-{run_id[:6]}")
+            director_sid = director_session.get("id") or director_session.get("sessionID") or director_session.get("session_id")
+            await client.switch_model(director_sid)
+            synthesis = await client.full_request(director_sid, director_prompt, timeout=timeout)
+        except Exception as e:
+            synthesis = f"director error: {e}"
+        finally:
+            if director_sid:
+                temp_sessions.append(director_sid)
+
+        store.log_message(run_id, "director", "director", synthesis)
+        store.finish_run(run_id, {r: w for r, w in workers.items()}, "done", synthesis)
+        store.blackboard_write(f"run:{run_id}", json.dumps({"goal": goal, "workers": workers, "synthesis": synthesis}, ensure_ascii=False))
+    except Exception as e:
+        store.finish_run(run_id, {}, "failed", f"director run failed: {e}")
+        return {"error": f"director run failed: {e}", "run_id": run_id}
+    finally:
+        # Release temporary sessions so they don't accumulate on the server
+        for sid in set(temp_sessions):
+            try:
+                await client.delete_session(sid)
+            except Exception:
+                pass
 
     return {
         "run_id": run_id,

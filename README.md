@@ -42,6 +42,16 @@ The installer:
 5. Prompts you only for what needs a human (Telegram token, Minecraft RCON password, API keys)
 6. Writes agent configs; **creates `.bak` backups** and **preserves existing working configs**
 
+## Tests
+
+```bash
+npm test                           # CLI internals (merge, paths, config guards)
+cd mcps/filesystem-mcp && uv run python -m pytest tests/   # 28 path-security tests
+cd mcps/orchestrator-mcp && uv run python -m pytest tests/ # store + role parsing
+```
+
+CI runs all of these plus import checks for all 15 MCPs and the Telegram/Minecraft suites (GitHub Actions).
+
 ## Usage
 
 ```bash

@@ -11,21 +11,68 @@ load_dotenv()
 
 mcp = FastMCP("Filesystem - opencode")
 
-# Whitelist of allowed directories (security)
+# Whitelist of allowed directories (security).
+# Confined to the user's own home and /tmp — resolved with realpath() so
+# relative paths and symlinks are anchored before comparison.
 ALLOWED_DIRS = [
     os.path.expanduser("~"),
     "/tmp",
-    "/home",
 ]
-ALLOWED_EXTENSIONS = None  # None = all extensions allowed
+
+# Files/dirs that are NEVER accessible through this MCP, even inside allowed
+# directories: private keys, credentials, tokens, other agents' secrets.
+SENSITIVE_DIR_NAMES = {".ssh", ".gnupg", ".aws", ".azure", ".kube"}
+SENSITIVE_FILE_NAMES = {
+    "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", ".npmrc", ".netrc",
+    ".git-credentials", "credentials", "token", "secrets",
+}
+SENSITIVE_FILE_SUFFIXES = (".pem", ".key", ".p12", ".pfx")
+# .env* files are private, except the safe placeholders
+SAFE_ENV_FILES = {".env.example", ".env.sample", ".env.dist"}
+
+
+def _is_within(child: str, parent: str) -> bool:
+    """True if `child` is `parent` or lives inside it (real path comparison)."""
+    try:
+        return os.path.commonpath([child, parent]) == parent
+    except ValueError:
+        return False  # different drives / unresolvable
+
+
+def _is_sensitive(full_path: str) -> bool:
+    name = os.path.basename(full_path)
+    parts = full_path.split(os.sep)
+    # Sensitive directories anywhere in the path
+    if any(part in SENSITIVE_DIR_NAMES for part in parts):
+        return True
+    # .env* files are private except safe placeholders
+    if name == ".env" or (name.startswith(".env.") and name not in SAFE_ENV_FILES):
+        return True
+    # Known-secret file names and suffixes
+    if name in SENSITIVE_FILE_NAMES:
+        return True
+    if name.startswith("id_") and name.split(".")[0] in {"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519"}:
+        return True
+    lowered = name.lower()
+    if lowered.endswith(SENSITIVE_FILE_SUFFIXES):
+        return True
+    if lowered.startswith("github-token") or lowered.startswith("npm_"):
+        return True
+    return False
 
 
 def is_path_allowed(path: str) -> tuple[bool, str]:
-    path = os.path.realpath(os.path.expanduser(path))
-    for allowed in ALLOWED_DIRS:
-        if path.startswith(allowed):
-            return True, path
-    return False, path
+    """Authorize a path: must live inside an allowed directory and not be sensitive."""
+    try:
+        full = os.path.realpath(os.path.expanduser(path))
+    except (OSError, ValueError):
+        return False, path
+    in_allowed = any(_is_within(full, os.path.realpath(allowed)) for allowed in ALLOWED_DIRS)
+    if not in_allowed:
+        return False, full
+    if _is_sensitive(full):
+        return False, full
+    return True, full
 
 
 @mcp.tool
@@ -36,7 +83,8 @@ async def fs_read_file(path: str, encoding: str = "utf-8"):
         return {"error": f"Path not allowed: {path}"}
     try:
         with open(full_path, "r", encoding=encoding, errors="replace") as f:
-            content = f.read()
+            raw = f.read(2 * 1024 * 1024)  # never slurp more than 2MB
+        content = raw
         return {
             "path": full_path,
             "size": len(content),
@@ -58,7 +106,9 @@ async def fs_write_file(path: str, content: str, append: bool = False):
     if not ok:
         return {"error": f"Path not allowed: {path}"}
     try:
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        parent = os.path.dirname(full_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         mode = "a" if append else "w"
         with open(full_path, mode, encoding="utf-8") as f:
             f.write(content)
@@ -80,6 +130,7 @@ async def fs_list_dir(path: str = ".", pattern: str = "*", show_hidden: bool = F
             files = list(Path(full_path).glob(pattern))
 
         entries = []
+        files = files[:1000]  # hard cap so a giant tree doesn't blow up the agent context
         for f in sorted(files, key=lambda x: (not x.is_dir(), x.name.lower())):
             if not show_hidden and f.name.startswith("."):
                 continue
@@ -175,8 +226,11 @@ async def fs_move_file(source: str, destination: str):
     if not ok_src or not ok_dst:
         return {"error": f"Path not allowed"}
     try:
-        os.makedirs(os.path.dirname(dst), exist_ok=True)
-        os.rename(src, dst)
+        parent = os.path.dirname(dst)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        import shutil
+        shutil.move(src, dst)
         return {"status": "moved", "from": src, "to": dst}
     except Exception as e:
         return {"error": str(e)}
@@ -315,6 +369,8 @@ async def fs_chmod(path: str, mode: str = "644"):
     if not ok:
         return {"error": f"Path not allowed: {path}"}
     try:
+        if not (mode.isdigit() and 0 <= int(mode, 8) <= 0o7777):
+            return {"error": f"Invalid mode '{mode}'. Expected octal like '644' or '755'."}
         os.chmod(full_path, int(mode, 8))
         return {"status": "permissions changed", "path": full_path, "mode": mode}
     except Exception as e:
@@ -324,8 +380,11 @@ async def fs_chmod(path: str, mode: str = "644"):
 @mcp.tool
 async def fs_disk_usage(path: str = "."):
     """Get disk usage of a path."""
+    ok, full_path = is_path_allowed(path)
+    if not ok:
+        return {"error": f"Path not allowed: {path}"}
     try:
-        usage = os.statvfs(path)
+        usage = os.statvfs(full_path)
         return {
             "path": path,
             "total_bytes": usage.f_frsize * usage.f_blocks,

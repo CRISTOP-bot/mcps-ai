@@ -60,22 +60,22 @@ async def sys_info():
 async def sys_processes(filter_name: str = "", limit: int = 20):
     """List running processes, optionally filtered by name."""
     try:
+        limit = max(1, min(int(limit), 500))
         if IS_WINDOWS:
+            cmd = ["tasklist"]
             if filter_name:
-                cmd = f'tasklist /FI "IMAGENAME eq *{filter_name}*"'
-            else:
-                cmd = "tasklist"
-            output = run_cmd(cmd)
+                cmd += ["/FI", f"IMAGENAME eq *{filter_name}*"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            lines = result.stdout.splitlines()
         else:
-            if IS_MACOS:
-                cmd = "ps aux"
-            else:
-                cmd = "ps aux --sort=-%cpu"
+            args = ["ps", "aux"] if IS_MACOS else ["ps", "aux", "--sort=-%cpu"]
+            result = subprocess.run(args, capture_output=True, text=True, timeout=10)
+            lines = result.stdout.splitlines()
             if filter_name:
-                cmd += f" | grep -i '{filter_name}' | grep -v grep"
-            cmd += f" | head -{limit + 1}"
-            output = run_cmd(cmd)
-        return {"processes": output}
+                needle = filter_name.lower()
+                header = lines[:1]
+                lines = header + [l for l in lines[1:] if needle in l.lower()]
+        return {"processes": "\n".join(lines[:limit + 1])}
     except Exception as e:
         return {"error": str(e)}
 
@@ -187,12 +187,19 @@ async def sys_env_vars(filter_name: str = ""):
 
 @mcp.tool
 async def sys_logs(log_path: str = "", lines: int = 50):
-    """Read system logs."""
+    """Read the last N lines of a log file."""
     try:
+        lines = max(1, min(int(lines), 2000))
         if not log_path:
             log_path = "/var/log/system.log" if IS_MACOS else "/var/log/syslog"
-        output = run_cmd(f"tail -n {lines} {log_path} 2>&1")
-        return {"log": output, "path": log_path}
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                tail = f.readlines()[-lines:]
+            return {"log": "".join(tail).rstrip(), "path": log_path}
+        except PermissionError:
+            return {"error": f"Permission denied: {log_path}", "path": log_path}
+        except FileNotFoundError:
+            return {"error": f"Log not found: {log_path}", "path": log_path}
     except Exception as e:
         return {"error": str(e)}
 

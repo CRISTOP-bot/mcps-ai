@@ -66,6 +66,7 @@ const AGENTS = [
       current.mcp.servers = mergeServers(current.mcp.servers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
+      try { fs.chmodSync(p, 0o600); } catch {}
     },
   },
   {
@@ -89,6 +90,7 @@ const AGENTS = [
       current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
+      try { fs.chmodSync(p, 0o600); } catch {}
     },
   },
   {
@@ -105,6 +107,7 @@ const AGENTS = [
       current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
+      try { fs.chmodSync(p, 0o600); } catch {}
     },
   },
   {
@@ -121,6 +124,7 @@ const AGENTS = [
       current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
+      try { fs.chmodSync(p, 0o600); } catch {}
     },
   },
   {
@@ -137,6 +141,7 @@ const AGENTS = [
       current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
+      try { fs.chmodSync(p, 0o600); } catch {}
     },
   },
   {
@@ -153,6 +158,7 @@ const AGENTS = [
       current.mcpServers = mergeServers(current.mcpServers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
+      try { fs.chmodSync(p, 0o600); } catch {}
     },
   },
   {
@@ -171,6 +177,7 @@ const AGENTS = [
       current.mcp.servers = mergeServers(current.mcp.servers, config);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, JSON.stringify(current, null, 2));
+      try { fs.chmodSync(p, 0o600); } catch {}
     },
   },
 ];
@@ -181,4 +188,4 @@ function detectAgents() {
   });
 }
 
-module.exports = { AGENTS, detectAgents };
+module.exports = { AGENTS, detectAgents, _test: { mergeServers } };
